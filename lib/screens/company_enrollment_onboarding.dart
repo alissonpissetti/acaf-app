@@ -65,7 +65,7 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
       children: [
         const ConnectPageHeader(
           title: 'Minha conta',
-          subtitle: 'Acesso via convite da sua empresa.',
+          subtitle: 'Cadastre-se com o código de adesão da sua empresa.',
         ),
         Expanded(
           child: ListView(
@@ -76,10 +76,10 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
               if (_step == 0) ...[
                 _InfoCard(
                   icon: Icons.business_center_rounded,
-                  title: 'Você foi convidado',
+                  title: 'Benefício corporativo',
                   body:
-                      'Sua empresa liberou o ACAF Connect para colaboradores. '
-                      'Use o código de adesão enviado pelo RH para continuar.',
+                      'Sua empresa liberou o ACAF Connect. '
+                      'Use o código de adesão compartilhado pelo RH para vincular sua empresa.',
                 ),
                 const SizedBox(height: AppSpacing.block),
                 _InfoCard(
@@ -144,7 +144,7 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
                 Text('Onde achar o código?', style: AppTypography.label),
                 const SizedBox(height: AppSpacing.tight),
                 Text(
-                  'E-mail de onboarding, portal do colaborador ou equipe de RH.',
+                  'E-mail do RH, portal corporativo ou mensagem com o código da empresa.',
                   style: AppTypography.bodyMuted,
                 ),
                 const SizedBox(height: AppSpacing.tight),
@@ -170,7 +170,7 @@ class _StepIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _StepDot(active: current >= 0, label: '1', title: 'Convite'),
+        _StepDot(active: current >= 0, label: '1', title: 'Empresa'),
         Expanded(child: Container(height: 2, color: AppColors.border)),
         _StepDot(active: current >= 1, label: '2', title: 'Código'),
       ],
