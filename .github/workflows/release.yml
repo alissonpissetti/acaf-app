@@ -1,0 +1,100 @@
+name: Release mobile
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.44.5"
+  PLAY_STORE_TRACK: ${{ vars.PLAY_STORE_TRACK }}
+
+jobs:
+  version:
+    name: Versão
+    runs-on: ubuntu-latest
+    outputs:
+      build_number: ${{ steps.version.outputs.build_number }}
+      build_name: ${{ steps.version.outputs.build_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Calcular versão automática
+        id: version
+        run: bash tool/ci/version.sh
+
+  android:
+    name: Android → Play Store
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BUILD_NUMBER: ${{ needs.version.outputs.build_number }}
+      BUILD_NAME: ${{ needs.version.outputs.build_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Configurar assinatura Android
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: bash tool/ci/setup_android_signing.sh
+
+      - name: Publicar no Google Play
+        env:
+          PLAY_STORE_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+        run: bundle exec fastlane android deploy
+
+  ios:
+    name: iOS → App Store Connect
+    needs: version
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      BUILD_NUMBER: ${{ needs.version.outputs.build_number }}
+      BUILD_NAME: ${{ needs.version.outputs.build_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Configurar assinatura iOS
+        env:
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: bash tool/ci/setup_ios_signing.sh
+
+      - name: Publicar na App Store Connect (TestFlight)
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: bundle exec fastlane ios deploy

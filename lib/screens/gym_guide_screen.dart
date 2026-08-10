@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/associates_repository.dart';
+import '../state/catalog_state.dart';
 import '../models/associate_search_filters.dart';
 import '../models/gym.dart';
 import '../state/app_state.dart';
@@ -15,6 +16,7 @@ import '../widgets/home_location_search_block.dart';
 import '../widgets/home_quick_actions_panel.dart';
 import '../widgets/section_header.dart';
 import 'connect_placeholder_screen.dart';
+import 'financial_screen.dart';
 import 'gym_network_screen.dart';
 import 'member_check_in_screen.dart';
 
@@ -27,8 +29,8 @@ class HomeAssociatesScreen extends StatefulWidget {
 }
 
 class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
-  final _repository = AssociatesRepository();
   final _scrollController = ScrollController();
+  AssociatesRepository? _repository;
   AssociateSearchFilters _filters = AssociateSearchFilters.empty;
   int _visibleCount = AssociatesRepository.homePageSize;
   bool _loadingMore = false;
@@ -76,13 +78,20 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
     });
   }
 
-  List<Gym> _associates(LocationState location) => _repository.searchWithFilters(
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _repository ??= AssociatesRepository(context.read<CatalogState>());
+  }
+
+  List<Gym> _associates(LocationState location) =>
+      _repository!.searchWithFilters(
         filters: _filters,
-        cityFilter: location.cityFilter,
+        cityFilter: location.listCityFilter,
       );
 
   void _openNetwork(Gym unit) {
-    final network = _repository.networkForUnit(unit);
+    final network = _repository!.networkForUnit(unit);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => GymNetworkScreen(network: network, initialUnit: unit),
@@ -102,7 +111,7 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
   Gym? _primaryGym(AppState appState) {
     final gymId = appState.primaryGymId;
     if (gymId != null) {
-      return _repository.gymById(gymId);
+      return _repository!.gymById(gymId);
     }
     return null;
   }
@@ -139,8 +148,8 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
     final location = context.watch<LocationState>();
     final appState = context.watch<AppState>();
     final allAssociates = _associates(location);
-    if (_listCityFilter != location.cityFilter) {
-      _listCityFilter = location.cityFilter;
+    if (_listCityFilter != location.listCityFilter) {
+      _listCityFilter = location.listCityFilter;
       _resetPagination();
     }
     final associates = allAssociates.take(_visibleCount).toList();
@@ -186,18 +195,14 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
                   label: 'Meus dados',
                   onTap: () => _openPlaceholder(
                     'Meus dados',
-                    'Perfil, documentos e preferências do colaborador (mockup).',
+                    'Perfil, documentos e preferências do colaborador.',
                     Icons.person_outline_rounded,
                   ),
                 ),
                 HomeQuickAction(
                   icon: Icons.receipt_long_outlined,
                   label: 'Financeiro',
-                  onTap: () => _openPlaceholder(
-                    'Financeiro',
-                    'Faturas, histórico de pagamentos e forma de cobrança (mockup).',
-                    Icons.receipt_long_outlined,
-                  ),
+                  onTap: () => FinancialScreen.open(context),
                 ),
               ],
             ),
@@ -209,7 +214,7 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
           child: SectionHeader(
             title: location.loading
                 ? 'Carregando...'
-                : '${allAssociates.length} unidades indexadas por distância',
+                : 'Exibindo unidades próximas à você',
             actionLabel: _hasActiveFilters ? 'Limpar' : null,
             onAction: _hasActiveFilters ? _clearAllFilters : null,
           ),
@@ -237,10 +242,10 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
                 ),
                 child: GymCard(
                   gym: associate,
-                  network: _repository.networkForUnit(associate),
+                  network: _repository!.networkForUnit(associate),
                   distanceRank: entry.key + 1,
                   cardContext: GymCardContext.homeUnitIndex,
-                  networkUnitCount: _repository.networkUnitCount(associate.networkId),
+                  networkUnitCount: _repository!.networkUnitCount(associate.networkId),
                   onTap: () => _openNetwork(associate),
                 ),
               );

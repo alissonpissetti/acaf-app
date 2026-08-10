@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/associates_repository.dart';
+import '../state/catalog_state.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -10,8 +11,6 @@ import '../screens/member_check_in_screen.dart';
 /// Barra inferior: Guia · Check-in (centro, se assinatura) · Minha conta.
 class ConnectBottomNav extends StatelessWidget {
   const ConnectBottomNav({super.key});
-
-  static final _repository = AssociatesRepository();
 
   static const _barHeight = 64.0;
   static const _fabLift = 26.0;
@@ -35,7 +34,8 @@ class ConnectBottomNav extends StatelessWidget {
       return;
     }
 
-    final gym = _repository.gymById(primaryId);
+    final repository = AssociatesRepository(context.read<CatalogState>());
+    final gym = repository.gymById(primaryId);
     if (gym == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

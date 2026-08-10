@@ -173,7 +173,7 @@ class _MyPlanContent extends StatelessWidget {
               TextButton(
                 onPressed: () => context.read<AppState>().clearEnrollment(),
                 child: Text(
-                  'Trocar empresa (mockup)',
+                  'Trocar empresa',
                   style: AppTypography.caption.copyWith(color: AppColors.textMuted),
                 ),
               ),

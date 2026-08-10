@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../models/daily_pass_offer.dart';
 import '../models/gym.dart';
 import '../models/one_time_payment.dart';
 import '../models/user_account.dart';
@@ -10,13 +11,17 @@ import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../utils/payment_input_formatters.dart';
 import '../widgets/connect_primary_button.dart';
-import '../widgets/daily_pass_modalities_section.dart';
 import 'purchase_success_screen.dart';
 
 class DailyPassCheckoutScreen extends StatefulWidget {
-  const DailyPassCheckoutScreen({super.key, required this.gym});
+  const DailyPassCheckoutScreen({
+    super.key,
+    required this.gym,
+    required this.offer,
+  });
 
   final Gym gym;
+  final DailyPassOffer offer;
 
   @override
   State<DailyPassCheckoutScreen> createState() => _DailyPassCheckoutScreenState();
@@ -79,7 +84,7 @@ class _DailyPassCheckoutScreenState extends State<DailyPassCheckoutScreen> {
             style: AppTypography.bodyMuted,
           ),
           const SizedBox(height: AppSpacing.block),
-          _DailySummaryCard(gym: widget.gym),
+          _DailySummaryCard(gym: widget.gym, offer: widget.offer),
           const SizedBox(height: AppSpacing.section),
           Text('Forma de pagamento', style: AppTypography.sectionTitle),
           const SizedBox(height: AppSpacing.item),
@@ -89,7 +94,7 @@ class _DailyPassCheckoutScreenState extends State<DailyPassCheckoutScreen> {
           ),
           const SizedBox(height: AppSpacing.block),
           if (_method == OneTimePaymentMethod.pix) ...[
-            _PixPanel(amount: widget.gym.dailyPassPrice),
+            _PixPanel(amount: widget.offer.price),
           ] else ...[
             if (cards.isNotEmpty) ...[
               Text('Cartões na sua carteira', style: AppTypography.cardTitle.copyWith(fontSize: 14)),
@@ -274,14 +279,28 @@ class _DailyPassCheckoutScreenState extends State<DailyPassCheckoutScreen> {
         }
     }
 
-    appState.addDailyPass(
+    final ok = await appState.addDailyPass(
       gym: widget.gym,
+      offer: widget.offer,
       paymentLabel: paymentLabel,
       cardLastFour: cardLastFour,
     );
 
     if (!mounted) return;
     setState(() => _submitting = false);
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pagamento simulado, mas não foi possível registrar a diária na academia. '
+            'Verifique que a API está rodando e tente novamente.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
@@ -317,9 +336,10 @@ class _DailyPassCheckoutScreenState extends State<DailyPassCheckoutScreen> {
 }
 
 class _DailySummaryCard extends StatelessWidget {
-  const _DailySummaryCard({required this.gym});
+  const _DailySummaryCard({required this.gym, required this.offer});
 
   final Gym gym;
+  final DailyPassOffer offer;
 
   @override
   Widget build(BuildContext context) {
@@ -329,18 +349,21 @@ class _DailySummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Diária · check-in hoje', style: AppTypography.caption),
+            Text(offer.label, style: AppTypography.caption),
             const SizedBox(height: 4),
             Text(gym.name, style: AppTypography.cardTitle.copyWith(fontSize: 16)),
             Text(gym.unitLabel, style: AppTypography.bodyMuted),
             const SizedBox(height: 8),
             Text(
-              'R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
+              'R\$ ${offer.price.toStringAsFixed(2)}',
               style: AppTypography.pageTitle.copyWith(fontSize: 22, color: AppColors.orange),
             ),
-            Text('Válida até 23:59 de hoje nesta unidade.', style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
-            const SizedBox(height: 12),
-            DailyPassModalitiesSection(gym: gym, compact: true),
+            Text(offer.validityLabel, style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
+            const SizedBox(height: 8),
+            Text(
+              'Modalidades: ${offer.modalitiesSummary}',
+              style: AppTypography.bodyMuted.copyWith(fontSize: 13),
+            ),
           ],
         ),
       ),
@@ -455,7 +478,7 @@ class _PixPanel extends StatelessWidget {
             child: const Icon(Icons.qr_code_2_rounded, size: 100, color: AppColors.foreground),
           ),
           const SizedBox(height: 12),
-          Text('PIX copia e cola (mockup)', style: AppTypography.caption),
+          Text('PIX copia e cola', style: AppTypography.caption),
           const SizedBox(height: 8),
           SelectableText(
             '00020126580014BR.GOV.BCB.PIX0136acaf-${amount.toStringAsFixed(2)}',

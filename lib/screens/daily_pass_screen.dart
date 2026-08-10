@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
 
+import '../models/daily_pass_offer.dart';
 import '../models/gym.dart';
+import '../services/acaf_api.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/connect_primary_button.dart';
-import '../widgets/daily_pass_modalities_section.dart';
 import 'daily_pass_checkout_screen.dart';
 
-/// Resumo da diária antes do checkout (PIX, cartão salvo ou Apple Pay).
-class DailyPassScreen extends StatelessWidget {
+/// Escolha da oferta de diária (integral ou faixa promocional) antes do checkout.
+class DailyPassScreen extends StatefulWidget {
   const DailyPassScreen({super.key, required this.gym});
 
   final Gym gym;
+
+  @override
+  State<DailyPassScreen> createState() => _DailyPassScreenState();
+}
+
+class _DailyPassScreenState extends State<DailyPassScreen> {
+  List<DailyPassOffer> _offers = [];
+  DailyPassOffer? _selected;
+  bool _loading = true;
+
+  Gym get gym => widget.gym;
+
+  static String _todayIso() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
 
   static String _todayLabel() {
     const weekdays = [
@@ -42,8 +59,38 @@ class DailyPassScreen extends StatelessWidget {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadOffers();
+  }
+
+  Future<void> _loadOffers() async {
+    final fallback = [
+      DailyPassOffer.integralFromGym(
+        id: 'base',
+        price: gym.dailyPassPrice,
+        modalities: gym.dailyPassIncludedModalities,
+      ),
+    ];
+
+    final response = await AcafApi().fetchDailyPassOffers(
+      unitId: gym.id,
+      date: _todayIso(),
+    );
+
+    if (!mounted) return;
+
+    final offers = response?.offers.isNotEmpty == true ? response!.offers : fallback;
+    setState(() {
+      _offers = offers;
+      _selected = offers.first;
+      _loading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final priceLabel = gym.dailyPassPrice.toStringAsFixed(2);
+    final selected = _selected;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -53,9 +100,31 @@ class DailyPassScreen extends StatelessWidget {
         children: [
           _UnitHeader(gym: gym, dateLabel: _todayLabel()),
           const SizedBox(height: AppSpacing.section),
-          _DailyPassHeroCard(gym: gym, priceLabel: priceLabel),
-          const SizedBox(height: AppSpacing.section),
-          DailyPassModalitiesSection(gym: gym),
+          Text('Escolha a oferta de hoje', style: AppTypography.sectionTitle),
+          const SizedBox(height: 6),
+          Text(
+            'Integral ou faixa promocional com horário e modalidades específicas.',
+            style: AppTypography.bodyMuted,
+          ),
+          const SizedBox(height: AppSpacing.item),
+          if (_loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(color: AppColors.orange),
+              ),
+            )
+          else
+            ..._offers.map(
+              (offer) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _OfferCard(
+                  offer: offer,
+                  selected: selected?.id == offer.id,
+                  onTap: () => setState(() => _selected = offer),
+                ),
+              ),
+            ),
           const SizedBox(height: AppSpacing.section),
           Text('Como funciona', style: AppTypography.sectionTitle),
           const SizedBox(height: AppSpacing.item),
@@ -77,54 +146,135 @@ class DailyPassScreen extends StatelessWidget {
             ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            border: Border(top: BorderSide(color: AppColors.border)),
-          ),
-          padding: const EdgeInsets.fromLTRB(AppSpacing.pageX, 12, AppSpacing.pageX, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      bottomNavigationBar: selected == null
+          ? null
+          : SafeArea(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(top: BorderSide(color: AppColors.border)),
+                ),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.pageX, 12, AppSpacing.pageX, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        Text('Total hoje', style: AppTypography.caption),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Total hoje', style: AppTypography.caption),
+                              Text(
+                                'R\$ ${selected.price.toStringAsFixed(2)}',
+                                style: AppTypography.pageTitle.copyWith(
+                                  fontSize: 22,
+                                  color: AppColors.orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         Text(
-                          'R\$ $priceLabel',
-                          style: AppTypography.pageTitle.copyWith(
-                            fontSize: 22,
-                            color: AppColors.orange,
+                          selected.windowLabel,
+                          style: AppTypography.bodyMuted.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Text(
-                    '1 check-in',
-                    style: AppTypography.bodyMuted.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                    const SizedBox(height: 12),
+                    ConnectPrimaryButton(
+                      label: 'Continuar para pagamento',
+                      icon: Icons.arrow_forward_rounded,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => DailyPassCheckoutScreen(
+                              gym: gym,
+                              offer: selected,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              ConnectPrimaryButton(
-                label: 'Continuar para pagamento',
-                icon: Icons.arrow_forward_rounded,
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => DailyPassCheckoutScreen(gym: gym),
+            ),
+    );
+  }
+}
+
+class _OfferCard extends StatelessWidget {
+  const _OfferCard({
+    required this.offer,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DailyPassOffer offer;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.orangeSoft : AppColors.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? AppColors.orange : AppColors.border,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: selected ? AppColors.orange : AppColors.textMuted,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(offer.label, style: AppTypography.cardTitle.copyWith(fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Text(
+                      offer.windowLabel,
+                      style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600),
                     ),
-                  );
-                },
+                    const SizedBox(height: 6),
+                    Text(
+                      offer.validityLabel,
+                      style: AppTypography.bodyMuted.copyWith(fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Modalidades: ${offer.modalitiesSummary}',
+                      style: AppTypography.bodyMuted.copyWith(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'R\$ ${offer.price.toStringAsFixed(2)}',
+                style: AppTypography.cardTitle.copyWith(
+                  fontSize: 18,
+                  color: AppColors.orangeDark,
+                ),
               ),
             ],
           ),
@@ -193,160 +343,16 @@ class _UnitHeader extends StatelessWidget {
   }
 }
 
-class _DailyPassHeroCard extends StatelessWidget {
-  const _DailyPassHeroCard({required this.gym, required this.priceLabel});
-
-  final Gym gym;
-  final String priceLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.orangeSoft,
-                  gym.heroTint.withValues(alpha: 0.12),
-                ],
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.foreground.withValues(alpha: 0.06),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.qr_code_2_rounded,
-                    size: 36,
-                    color: AppColors.orange,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Diária · check-in', style: AppTypography.label),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Acesso único hoje',
-                        style: AppTypography.cardTitle.copyWith(fontSize: 17),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        gym.unitLabel,
-                        style: AppTypography.bodyMuted.copyWith(fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'R\$ $priceLabel',
-                      style: AppTypography.pageTitle.copyWith(fontSize: 32),
-                    ),
-                    const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        'pagamento único',
-                        style: AppTypography.caption,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 14),
-                _PassDetailRow(
-                  icon: Icons.nightlight_round,
-                  text: 'Válida até 23:59 de hoje nesta unidade.',
-                ),
-                const SizedBox(height: 10),
-                _PassDetailRow(
-                  icon: Icons.receipt_long_rounded,
-                  text: 'Apresente o QR code na recepção após confirmar o pagamento.',
-                ),
-                const SizedBox(height: 10),
-                _PassDetailRow(
-                  icon: Icons.fitness_center_rounded,
-                  text: 'Modalidades: ${gym.dailyPassModalitiesSummary}',
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PassDetailRow extends StatelessWidget {
-  const _PassDetailRow({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: AppColors.orange),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTypography.body.copyWith(fontSize: 14, height: 1.4),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _HowItWorksSteps extends StatelessWidget {
   const _HowItWorksSteps();
 
   @override
   Widget build(BuildContext context) {
     const steps = [
-      _StepData('1', 'Pagamento', 'PIX, cartão salvo, novo cartão ou Apple Pay.'),
-      _StepData('2', 'QR code', 'Libera na hora na sua carteira ACAF Connect.'),
-      _StepData('3', 'Check-in', 'Mostre o código na recepção e treine hoje.'),
+      _StepData('1', 'Escolha a oferta', 'Integral ou faixa com horário e modalidades.'),
+      _StepData('2', 'Pagamento', 'PIX, cartão salvo, novo cartão ou Apple Pay.'),
+      _StepData('3', 'QR code', 'Libera na hora na sua carteira ACAF Connect.'),
+      _StepData('4', 'Check-in', 'Mostre o código na recepção dentro da janela válida.'),
     ];
 
     return Column(

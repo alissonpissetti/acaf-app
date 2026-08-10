@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/unit_subscription_plans.dart';
+import 'daily_pass_offer.dart';
+
 class GymFacility {
   const GymFacility({required this.label, required this.icon});
 
@@ -58,10 +61,19 @@ class Gym {
     required this.heroTint,
     required this.heroIcon,
     this.dailyPassModalities = const [],
+    this.dailyPassActive = true,
+    this.planSpecs = const [],
+    this.scheduledModalities = const [],
+    this.weeklySchedule,
     this.heroImageAsset,
+    this.heroImageUrl,
     this.brandLogoAsset,
+    this.brandLogoUrl,
     this.brandLogoWidthFactor = 1,
     this.galleryImageAssets = const [],
+    this.galleryImageUrls = const [],
+    this.latitude,
+    this.longitude,
   });
 
   final String id;
@@ -79,23 +91,40 @@ class Gym {
   final double dailyPassPrice;
   /// Modalidades liberadas na diária (painel academia). Vazio = todas [modalities].
   final List<String> dailyPassModalities;
+  final bool dailyPassActive;
+  final List<UnitPlanSpec> planSpecs;
+  final List<String> scheduledModalities;
+  /// Horários por dia (`mon`…`sun`) vindos da API.
+  final Map<String, dynamic>? weeklySchedule;
   final List<SubscriptionPlan> plans;
   final Color heroTint;
   final IconData heroIcon;
-  /// Foto da unidade (card e detalhe).
+  /// Foto local (legado).
   final String? heroImageAsset;
-  /// Marca da academia associada.
+  /// Foto da API.
+  final String? heroImageUrl;
+  /// Marca local (legado).
   final String? brandLogoAsset;
-  /// Largura relativa do logo no hero (1 = quadrado; ~2,2 para lockups horizontais).
+  /// Logo da rede na API.
+  final String? brandLogoUrl;
   final double brandLogoWidthFactor;
-  /// Fotos adicionais (detalhe / carrossel).
   final List<String> galleryImageAssets;
+  final List<String> galleryImageUrls;
+  final double? latitude;
+  final double? longitude;
 
-  List<String> get photoAssets {
+  bool get hasRating => rating > 0;
+
+  /// URLs e assets para carrossel (prioriza API).
+  List<String> get photoSources {
+    if (galleryImageUrls.isNotEmpty) return galleryImageUrls;
     if (galleryImageAssets.isNotEmpty) return galleryImageAssets;
+    if (heroImageUrl != null && heroImageUrl!.isNotEmpty) return [heroImageUrl!];
     if (heroImageAsset != null) return [heroImageAsset!];
     return const [];
   }
+
+  List<String> get photoAssets => photoSources;
 
   String get locationLabel => '$neighborhood · $city';
 
@@ -125,6 +154,7 @@ class Gym {
   Gym copyWith({
     List<SubscriptionPlan>? plans,
     List<String>? dailyPassModalities,
+    double? distanceKm,
   }) {
     return Gym(
       id: id,
@@ -133,19 +163,28 @@ class Gym {
       neighborhood: neighborhood,
       city: city,
       rating: rating,
-      distanceKm: distanceKm,
+      distanceKm: distanceKm ?? this.distanceKm,
       modalities: modalities,
       facilities: facilities,
       openHours: openHours,
       dailyPassPrice: dailyPassPrice,
       dailyPassModalities: dailyPassModalities ?? this.dailyPassModalities,
+      dailyPassActive: dailyPassActive,
+      planSpecs: planSpecs,
+      scheduledModalities: scheduledModalities,
+      weeklySchedule: weeklySchedule,
       plans: plans ?? this.plans,
       heroTint: heroTint,
       heroIcon: heroIcon,
       heroImageAsset: heroImageAsset,
+      heroImageUrl: heroImageUrl,
       brandLogoAsset: brandLogoAsset,
+      brandLogoUrl: brandLogoUrl,
       brandLogoWidthFactor: brandLogoWidthFactor,
       galleryImageAssets: galleryImageAssets,
+      galleryImageUrls: galleryImageUrls,
+      latitude: latitude,
+      longitude: longitude,
     );
   }
 }
@@ -162,6 +201,11 @@ class WalletItem {
     this.planName,
     this.validUntil,
     this.checkInCode,
+    this.pricePaid,
+    this.offerId,
+    this.validWindowStart,
+    this.validWindowEnd,
+    this.allowedModalities = const [],
   });
 
   final String id;
@@ -172,11 +216,35 @@ class WalletItem {
   final String? planName;
   final DateTime? validUntil;
   final String? checkInCode;
+  final double? pricePaid;
+  final String? offerId;
+  final String? validWindowStart;
+  final String? validWindowEnd;
+  final List<String> allowedModalities;
 
   bool get isActiveDailyPass {
     if (type != PurchaseType.dailyPass) return false;
     final until = validUntil;
     if (until == null) return true;
     return !DateTime.now().isAfter(until);
+  }
+
+  bool get hasTimeWindow => validWindowStart != null && validWindowEnd != null;
+
+  String get validitySummary {
+    if (hasTimeWindow) {
+      return 'Válida hoje ${formatDailyPassTime(validWindowStart!)}–${formatDailyPassTime(validWindowEnd!)}';
+    }
+    if (validUntil != null) {
+      final h = validUntil!.hour.toString().padLeft(2, '0');
+      final m = validUntil!.minute.toString().padLeft(2, '0');
+      return 'Válida até ${validUntil!.day}/${validUntil!.month} · $h:$m';
+    }
+    return 'Válida hoje nesta unidade';
+  }
+
+  String get modalitiesSummary {
+    if (allowedModalities.isEmpty) return gym.dailyPassModalitiesSummary;
+    return allowedModalities.join(', ');
   }
 }

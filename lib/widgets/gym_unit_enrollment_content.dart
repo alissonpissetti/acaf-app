@@ -13,6 +13,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'connect_primary_button.dart';
 import 'gym_features_section.dart';
+import 'gym_modality_booking_section.dart';
+import 'gym_open_hours_section.dart';
 
 /// Barra fixa inferior: diária + academia principal.
 Widget gymUnitStickyActions(BuildContext context, Gym gym) {
@@ -84,7 +86,13 @@ void _onChoosePrimaryGym(BuildContext context, Gym gym, AppState appState) async
 
   if (confirmed != true || !context.mounted) return;
 
-  appState.trySetPrimaryGym(gymId: gym.id, gymName: gym.name);
+  final error = await appState.trySetPrimaryGym(gymId: gym.id, gymName: gym.name);
+  if (error != null && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error), behavior: SnackBarBehavior.floating),
+    );
+    return;
+  }
 }
 
 /// Blocos abaixo do hero: local, modalidades, planos, etc.
@@ -128,8 +136,6 @@ List<Widget> gymUnitEnrollmentSections(
             const SizedBox(height: 4),
             Text(network.name, style: AppTypography.bodyMuted),
           ],
-          const SizedBox(height: 6),
-          Text(gym.openHours, style: AppTypography.bodyMuted),
         ],
       ),
     ),
@@ -140,17 +146,30 @@ List<Widget> gymUnitEnrollmentSections(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GymModalitiesSection(modalities: gym.modalities),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Divider(height: 1),
+            GymOpenHoursSection(
+              weeklySchedule: gym.weeklySchedule,
+              summary: gym.openHours,
             ),
-            GymFacilitiesSection(facilities: gym.facilities),
+            if (gym.modalities.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Divider(height: 1),
+              ),
+              GymModalitiesSection(modalities: gym.modalities),
+            ],
+            if (gym.facilities.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Divider(height: 1),
+              ),
+              GymFacilitiesSection(facilities: gym.facilities),
+            ],
           ],
         ),
       ),
     ),
     const SizedBox(height: AppSpacing.section),
+    GymModalityBookingSection(gym: gym),
     Text('Como acessar', style: AppTypography.sectionTitle),
     const SizedBox(height: AppSpacing.item),
     if (connectSub == null)
@@ -178,17 +197,18 @@ List<Widget> gymUnitEnrollmentSections(
               },
       ),
     const SizedBox(height: 12),
-    GymEnrollmentOptionCard(
-      icon: Icons.qr_code_2_rounded,
-      title: 'Diária com check-in',
-      subtitle: 'Válida hoje · R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => DailyPassScreen(gym: gym)),
-        );
-      },
-    ),
-    const SizedBox(height: AppSpacing.section),
+    if (gym.dailyPassActive)
+      GymEnrollmentOptionCard(
+        icon: Icons.qr_code_2_rounded,
+        title: 'Diária com check-in',
+        subtitle: 'Válida hoje · R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => DailyPassScreen(gym: gym)),
+          );
+        },
+      ),
+    if (gym.dailyPassActive) const SizedBox(height: AppSpacing.section),
     if (connectSub != null && appState.primaryGym?.gymId == gym.id) ...[
       Card(
         color: AppColors.orangeSoft,

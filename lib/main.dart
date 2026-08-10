@@ -1,31 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'data/associates_repository.dart';
+import 'data/connect_domain.dart';
 import 'screens/home_shell.dart';
 import 'state/app_state.dart';
+import 'state/catalog_state.dart';
 import 'state/location_state.dart';
+import 'state/app_state_persistence.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final appState = AppState();
+
+  final catalogState = CatalogState();
+  final locationState = LocationState(catalogState);
+  catalogState.addListener(() {
+    if (catalogState.isReady) {
+      locationState.refreshDistancesFromCache();
+    }
+  });
+  String? bootstrapError;
+
+  try {
+    await ConnectDomain.load();
+    await catalogState.load();
+  } catch (e) {
+    bootstrapError = e is StateError ? e.message : 'Não foi possível conectar à API local.';
+  }
+
+  final associatesRepository = AssociatesRepository(catalogState);
+  final persistence = AppStatePersistence(repository: associatesRepository);
+  final appState = AppState(
+    persistence: persistence,
+    associatesRepository: associatesRepository,
+  );
   await appState.loadPersistedState();
+
+  locationState.resolveNearbyArea();
 
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: catalogState),
         ChangeNotifierProvider.value(value: appState),
-        ChangeNotifierProvider(
-          create: (_) => LocationState()..resolveNearbyArea(),
-        ),
+        ChangeNotifierProvider.value(value: locationState),
       ],
-      child: const AcafApp(),
+      child: AcafApp(bootstrapError: bootstrapError),
     ),
   );
 }
 
 class AcafApp extends StatelessWidget {
-  const AcafApp({super.key});
+  const AcafApp({super.key, this.bootstrapError});
+
+  final String? bootstrapError;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +62,96 @@ class AcafApp extends StatelessWidget {
       title: 'ACAF Connect',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: const HomeShell(),
+      home: bootstrapError != null
+          ? ApiBootstrapErrorScreen(message: bootstrapError!)
+          : const HomeShell(),
+    );
+  }
+}
+
+class ApiBootstrapErrorScreen extends StatelessWidget {
+  const ApiBootstrapErrorScreen({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Não foi possível iniciar',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              Text(message),
+              const SizedBox(height: 8),
+              const Text(
+                'Verifique que acaf-api está rodando em http://127.0.0.1:8787 '
+                '(Android emulador: http://10.0.2.2:8787).',
+              ),
+              const Spacer(),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const BootstrapRetryScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BootstrapRetryScreen extends StatefulWidget {
+  const BootstrapRetryScreen({super.key});
+
+  @override
+  State<BootstrapRetryScreen> createState() => _BootstrapRetryScreenState();
+}
+
+class _BootstrapRetryScreenState extends State<BootstrapRetryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _retry();
+  }
+
+  Future<void> _retry() async {
+    final catalog = context.read<CatalogState>();
+    try {
+      await ConnectDomain.load();
+      await catalog.load();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const HomeShell()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => ApiBootstrapErrorScreen(
+            message: e is StateError ? e.message : 'Falha ao conectar à API.',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

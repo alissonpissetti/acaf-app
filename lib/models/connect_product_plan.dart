@@ -6,6 +6,7 @@ class ConnectProductPlan {
     required this.description,
     required this.benefits,
     required this.highlight,
+    this.tierIndex = 0,
   });
 
   final String id;
@@ -14,6 +15,7 @@ class ConnectProductPlan {
   final String description;
   final List<String> benefits;
   final bool highlight;
+  final int tierIndex;
 
   /// Ex.: "Start", "Plus" (sem prefixo ACAF).
   String get tierShortName => name.replaceFirst('ACAF ', '');

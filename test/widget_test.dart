@@ -1,27 +1,17 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 
 import 'package:acaf/main.dart';
-import 'package:acaf/state/app_state.dart';
-import 'package:acaf/state/location_state.dart';
 
 void main() {
-  testWidgets('lista associados ordenados por distância', (WidgetTester tester) async {
+  testWidgets('mostra erro quando API não está disponível no bootstrap', (WidgetTester tester) async {
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => AppState()),
-          ChangeNotifierProvider(create: (_) => LocationState()),
-        ],
-        child: const AcafApp(),
+      const MaterialApp(
+        home: ApiBootstrapErrorScreen(message: 'Não foi possível conectar à API local.'),
       ),
     );
 
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-
-    expect(find.text('Carpe Diem Academia'), findsOneWidget);
-    expect(find.textContaining('Unidade Portão'), findsOneWidget);
-    expect(find.text('Mais perto'), findsOneWidget);
+    expect(find.text('Não foi possível iniciar'), findsOneWidget);
+    expect(find.textContaining('127.0.0.1:8787'), findsOneWidget);
   });
 }

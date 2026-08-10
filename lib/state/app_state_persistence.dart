@@ -9,23 +9,21 @@ import '../models/connect_product_plan.dart';
 import '../models/gym.dart';
 import '../models/primary_gym.dart';
 import '../models/user_account.dart';
-import '../data/mock_enrollment_codes.dart';
+import '../models/company_enrollment.dart';
 
-/// Persistência local do estado do mockup (demonstrações).
+/// Cache local leve da sessão do associado (preferências de UI e dados ainda sem endpoint dedicado).
+/// Plano Connect, academia principal e diárias ativas são sincronizados com a API ao abrir o app.
 class AppStatePersistence {
   AppStatePersistence({AssociatesRepository? repository})
-      : _repository = repository ?? AssociatesRepository();
+      : _repository = repository;
 
-  static const storageKey = 'acaf_connect_mock_state_v1';
+  static const storageKey = 'acaf_connect_session_v1';
+  static const legacyStorageKey = 'acaf_connect_mock_state_v1';
 
-  final AssociatesRepository _repository;
+  final AssociatesRepository? _repository;
 
-  /// `false` quando o canal nativo falha (ex.: hot restart após adicionar o plugin).
   bool _platformAvailable = true;
 
-  bool get platformAvailable => _platformAvailable;
-
-  /// Fallback só na sessão atual se [SharedPreferences] não responder.
   String? _sessionFallbackJson;
 
   Future<SharedPreferences?> _prefs() async {
@@ -34,13 +32,13 @@ class AppStatePersistence {
       return await SharedPreferences.getInstance();
     } on PlatformException catch (e, st) {
       _platformAvailable = false;
-      debugPrint('ACAF mock: SharedPreferences indisponível (${e.message}). '
-          'Use flutter run (rebuild completo). Dados só nesta sessão.');
+      debugPrint('ACAF: SharedPreferences indisponível (${e.message}). '
+          'Use flutter run (rebuild completo). Cache só nesta sessão.');
       debugPrint('$st');
       return null;
     } catch (e, st) {
       _platformAvailable = false;
-      debugPrint('ACAF mock: erro ao abrir SharedPreferences: $e');
+      debugPrint('ACAF: erro ao abrir SharedPreferences: $e');
       debugPrint('$st');
       return null;
     }
@@ -49,12 +47,15 @@ class AppStatePersistence {
   Future<AppStateSnapshot?> load() async {
     try {
       final prefs = await _prefs();
-      final raw = prefs?.getString(storageKey) ?? _sessionFallbackJson;
+      final raw = prefs?.getString(storageKey) ??
+          prefs?.getString(legacyStorageKey) ??
+          _sessionFallbackJson;
       if (raw == null || raw.isEmpty) return null;
       final map = jsonDecode(raw) as Map<String, dynamic>;
-      return AppStateSnapshot.fromJson(map, _repository);
+      if (_repository == null) return null;
+      return AppStateSnapshot.fromJson(map, _repository!);
     } catch (e, st) {
-      debugPrint('ACAF mock: falha ao carregar estado: $e');
+      debugPrint('ACAF: falha ao carregar sessão local: $e');
       debugPrint('$st');
       return null;
     }
@@ -67,9 +68,10 @@ class AppStatePersistence {
       final prefs = await _prefs();
       if (prefs != null) {
         await prefs.setString(storageKey, encoded);
+        await prefs.remove(legacyStorageKey);
       }
     } catch (e, st) {
-      debugPrint('ACAF mock: falha ao salvar estado: $e');
+      debugPrint('ACAF: falha ao salvar sessão local: $e');
       debugPrint('$st');
     }
   }
@@ -80,9 +82,10 @@ class AppStatePersistence {
       final prefs = await _prefs();
       if (prefs != null) {
         await prefs.remove(storageKey);
+        await prefs.remove(legacyStorageKey);
       }
     } catch (e, st) {
-      debugPrint('ACAF mock: falha ao limpar estado: $e');
+      debugPrint('ACAF: falha ao limpar sessão local: $e');
       debugPrint('$st');
     }
   }

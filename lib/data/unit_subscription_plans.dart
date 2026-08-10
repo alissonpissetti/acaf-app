@@ -1,9 +1,9 @@
 import '../models/connect_product_plan.dart';
 import '../models/gym.dart';
-import 'connect_plans.dart';
+import 'connect_plans.dart' as connect_plans;
 import 'daily_pass_modalities.dart';
 
-/// Oferta de um tier Connect na unidade.
+/// Oferta de um tier Connect na unidade (dados da API).
 class UnitPlanSpec {
   const UnitPlanSpec({
     required this.connectPlanId,
@@ -20,58 +20,6 @@ class UnitPlanSpec {
   /// Planos mais caros sem [exactOnly] ampliam a lista com outras modalidades da unidade.
   final bool exactOnly;
 }
-
-/// Perfis especiais por unidade. Demais unidades usam [defaultUnitPlanSpecs].
-const Map<String, List<UnitPlanSpec>> _unitPlanOverrides = {
-  /// Plus só musculação; Multi/Pro/Total incluem Personal e Cardio.
-  'g4': [
-    UnitPlanSpec(connectPlanId: 'connect-start'),
-    UnitPlanSpec(
-      connectPlanId: 'connect-plus',
-      includedModalities: ['Musculação'],
-      exactOnly: true,
-    ),
-    UnitPlanSpec(connectPlanId: 'connect-multi'),
-    UnitPlanSpec(connectPlanId: 'connect-pro'),
-    UnitPlanSpec(connectPlanId: 'connect-total'),
-  ],
-  'g0': [
-    UnitPlanSpec(
-      connectPlanId: 'connect-start',
-      includedModalities: ['Funcional'],
-      exactOnly: true,
-    ),
-    UnitPlanSpec(
-      connectPlanId: 'connect-plus',
-      includedModalities: ['Funcional', 'HIIT'],
-    ),
-    UnitPlanSpec(connectPlanId: 'connect-multi'),
-  ],
-  'g3': [
-    UnitPlanSpec(
-      connectPlanId: 'connect-start',
-      includedModalities: ['Yoga'],
-      exactOnly: true,
-    ),
-    UnitPlanSpec(
-      connectPlanId: 'connect-plus',
-      includedModalities: ['Yoga', 'Pilates'],
-    ),
-    UnitPlanSpec(connectPlanId: 'connect-multi'),
-    UnitPlanSpec(connectPlanId: 'connect-pro'),
-  ],
-  'g2': [
-    UnitPlanSpec(connectPlanId: 'connect-start'),
-    UnitPlanSpec(
-      connectPlanId: 'connect-plus',
-      includedModalities: ['Cross Training'],
-      exactOnly: true,
-    ),
-    UnitPlanSpec(connectPlanId: 'connect-multi'),
-    UnitPlanSpec(connectPlanId: 'connect-pro'),
-    UnitPlanSpec(connectPlanId: 'connect-total'),
-  ],
-};
 
 List<UnitPlanSpec> defaultUnitPlanSpecs(List<String> unitModalities) {
   if (unitModalities.length <= 1) {
@@ -100,20 +48,20 @@ List<UnitPlanSpec> defaultUnitPlanSpecs(List<String> unitModalities) {
   ];
 }
 
-List<UnitPlanSpec> unitPlanSpecsForGym(String gymId, List<String> unitModalities) {
-  return _unitPlanOverrides[gymId] ?? defaultUnitPlanSpecs(unitModalities);
+List<UnitPlanSpec> unitPlanSpecsForGym(Gym gym) {
+  if (gym.planSpecs.isNotEmpty) return gym.planSpecs;
+  return defaultUnitPlanSpecs(gym.modalities);
 }
 
-List<SubscriptionPlan> buildUnitConnectPlans({
-  required String gymId,
-  required List<String> unitModalities,
-}) {
-  final specs = unitPlanSpecsForGym(gymId, unitModalities);
+List<SubscriptionPlan> buildUnitConnectPlans({required Gym gym}) {
+  final specs = unitPlanSpecsForGym(gym);
+  final unitModalities = gym.modalities;
+  final gymId = gym.id;
   final plans = <SubscriptionPlan>[];
   var baselineModalities = <String>[];
 
   for (final spec in specs) {
-    final connect = connectPlanById(spec.connectPlanId);
+    final connect = connect_plans.connectPlanById(spec.connectPlanId);
     if (connect == null) continue;
 
     final scoped = _resolveModalities(
@@ -244,7 +192,7 @@ List<String> _benefitsFor(
 Gym applyConnectPlansToGym(Gym gym) {
   return applyDailyPassModalitiesToGym(
     gym.copyWith(
-      plans: buildUnitConnectPlans(gymId: gym.id, unitModalities: gym.modalities),
+      plans: buildUnitConnectPlans(gym: gym),
     ),
   );
 }
@@ -260,7 +208,7 @@ double unitPlansFromPrice(List<SubscriptionPlan> plans) {
 
 /// Índice do tier Connect (0 = Start … 4 = Total).
 int connectPlanTierIndex(String connectPlanId) {
-  return connectProductPlans.indexWhere((p) => p.id == connectPlanId);
+  return connect_plans.connectPlanTierIndex(connectPlanId);
 }
 
 /// Planos da unidade que o associado pode **contratar** (tier Connect dele ou mais barato).
@@ -272,7 +220,7 @@ List<SubscriptionPlan> eligibleUnitPlansForConnect(
 
   final userIdx = connectPlanTierIndex(userConnectPlanId);
   if (userIdx < 0) {
-    final userPlan = connectPlanById(userConnectPlanId);
+    final userPlan = connect_plans.connectPlanById(userConnectPlanId);
     final cap = userPlan?.pricePerMonth ?? double.infinity;
     return unitPlans.where((p) => p.pricePerMonth <= cap).toList()
       ..sort((a, b) => a.pricePerMonth.compareTo(b.pricePerMonth));
@@ -281,7 +229,7 @@ List<SubscriptionPlan> eligibleUnitPlansForConnect(
   final eligible = unitPlans.where((plan) {
     final tierId = plan.connectPlanId;
     if (tierId == null) {
-      return plan.pricePerMonth <= connectProductPlans[userIdx].pricePerMonth;
+      return plan.pricePerMonth <= connect_plans.connectProductPlans[userIdx].pricePerMonth;
     }
     final tierIdx = connectPlanTierIndex(tierId);
     return tierIdx >= 0 && tierIdx <= userIdx;
@@ -305,13 +253,13 @@ bool isUnitPlanAboveUserConnectTier(SubscriptionPlan plan, String userConnectPla
   if (!isUnitPlanSubscribable(plan, userConnectPlanId)) {
     final userIdx = connectPlanTierIndex(userConnectPlanId);
     if (userIdx < 0) {
-      final userPlan = connectPlanById(userConnectPlanId);
+      final userPlan = connect_plans.connectPlanById(userConnectPlanId);
       if (userPlan == null) return false;
       return plan.pricePerMonth > userPlan.pricePerMonth;
     }
     final tierId = plan.connectPlanId;
     if (tierId == null) {
-      return plan.pricePerMonth > connectProductPlans[userIdx].pricePerMonth;
+      return plan.pricePerMonth > connect_plans.connectProductPlans[userIdx].pricePerMonth;
     }
     final planIdx = connectPlanTierIndex(tierId);
     return planIdx >= 0 && planIdx > userIdx;
@@ -321,5 +269,5 @@ bool isUnitPlanAboveUserConnectTier(SubscriptionPlan plan, String userConnectPla
 
 ConnectProductPlan? connectPlanForSubscription(ActiveConnectSubscription? sub) {
   if (sub == null) return null;
-  return connectPlanById(sub.planId);
+  return connect_plans.connectPlanById(sub.planId);
 }

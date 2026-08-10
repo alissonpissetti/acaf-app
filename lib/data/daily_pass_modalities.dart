@@ -2,8 +2,8 @@ import '../models/gym.dart';
 
 /// Modalidades da diária configuradas no painel da academia (mock por unidade).
 const Map<String, List<String>> _dailyPassModalityOverrides = {
-  'g_carpe': ['Musculação', 'Cardio', 'Funcional'],
-  'g_carpe_batel': ['Musculação', 'Cardio', 'Funcional'],
+  'g_carpe': ['Musculação', 'Funcional', 'Natação', 'Full Body'],
+  'g_carpe_batel': ['Musculação', 'Funcional'],
   'g_viver': ['Musculação', 'Cardio', 'Natação'],
   'g_equilibrium': ['Musculação', 'Funcional', 'Alongamento'],
   'g_wolf': ['Musculação', 'Funcional'],

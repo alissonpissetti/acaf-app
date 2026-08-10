@@ -1,13 +1,21 @@
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 
-import '../data/mock_search_areas.dart';
+import '../data/search_areas.dart';
+import '../state/catalog_state.dart';
 
-/// Localização para listar associados por perto (GPS mock + escolha manual de área).
+/// Localização do usuário para ordenar unidades por distância.
 class LocationState extends ChangeNotifier {
+  LocationState(this._catalog);
+
+  final CatalogState _catalog;
+
   bool _loading = true;
   String _currentLocationLabel = '';
   bool _usingCurrentLocation = true;
   SearchArea? _manualArea;
+  double? _lastLatitude;
+  double? _lastLongitude;
 
   bool get loading => _loading;
 
@@ -15,20 +23,25 @@ class LocationState extends ChangeNotifier {
 
   SearchArea? get manualArea => _manualArea;
 
-  /// Rótulo do GPS (sem área manual selecionada).
+  List<SearchArea> get availableAreas {
+    final cities = _catalog.repository.cities;
+    if (cities.isEmpty) {
+      return searchAreasFromCities(['Curitiba']);
+    }
+    return searchAreasFromCities(cities);
+  }
+
   String get currentLocationLabel {
     if (_loading) return 'Atualizando...';
     return _currentLocationLabel.isEmpty ? 'Curitiba, PR' : _currentLocationLabel;
   }
 
-  /// Texto exibido no campo de localização.
   String get areaLabel {
     if (_loading && _usingCurrentLocation) return 'Obtendo localização...';
     if (_usingCurrentLocation) return currentLocationLabel;
     return _manualArea?.label ?? currentLocationLabel;
   }
 
-  /// Filtro de cidade para o repositório de associados.
   String get cityFilter {
     if (_usingCurrentLocation) {
       return _inferCityFromGpsLabel(_currentLocationLabel);
@@ -36,12 +49,48 @@ class LocationState extends ChangeNotifier {
     return _manualArea?.cityMatch ?? 'Curitiba';
   }
 
+  /// Sem filtro de cidade quando a lista usa GPS (ordena por distância).
+  String? get listCityFilter {
+    if (_usingCurrentLocation) return null;
+    return _manualArea?.cityMatch ?? 'Curitiba';
+  }
+
   Future<void> resolveNearbyArea() async {
     _loading = true;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 450));
-    _currentLocationLabel = 'Curitiba, PR';
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _currentLocationLabel = 'Curitiba, PR';
+        _loading = false;
+        notifyListeners();
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        _currentLocationLabel = 'Curitiba, PR';
+        _loading = false;
+        notifyListeners();
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+      _lastLatitude = position.latitude;
+      _lastLongitude = position.longitude;
+      _catalog.repository.applyDistancesFrom(position.latitude, position.longitude);
+      _currentLocationLabel = 'Perto de você';
+    } catch (e) {
+      debugPrint('ACAF: falha ao obter localização: $e');
+      _currentLocationLabel = 'Curitiba, PR';
+    }
+
     _loading = false;
     notifyListeners();
   }
@@ -56,6 +105,13 @@ class LocationState extends ChangeNotifier {
     _usingCurrentLocation = false;
     _manualArea = area;
     _loading = false;
+    notifyListeners();
+  }
+
+  /// Recalcula distâncias após o catálogo ser recarregado (coordenadas novas na API).
+  void refreshDistancesFromCache() {
+    if (_lastLatitude == null || _lastLongitude == null) return;
+    _catalog.repository.applyDistancesFrom(_lastLatitude!, _lastLongitude!);
     notifyListeners();
   }
 

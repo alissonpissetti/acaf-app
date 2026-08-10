@@ -1,35 +1,23 @@
-import 'mock_gyms.dart';
+import '../data/connect_domain.dart';
 
-/// Catálogo base de modalidades (API futura). Unidades podem acrescentar outras.
-const List<String> baseModalityCatalog = [
-  '24h',
-  'Alongamento',
-  'Aulas em grupo',
-  'Box',
-  'Cardio',
-  'Cross Training',
-  'Dança',
-  'Funcional',
-  'HIIT',
-  'Hidroginástica',
-  'Lutas',
-  'Meditação',
-  'Musculação',
-  'Olympic lifting',
-  'Personal trainer',
-  'Pilates',
-  'Spinning',
-  'Yoga',
-];
+List<String> _catalogOptions = [];
 
-/// Todas as modalidades conhecidas (catálogo + mocks), ordenadas. `24h` primeiro.
+void setModalityCatalogOptions(List<String> options) {
+  _catalogOptions = List.of(options);
+}
+
+/// Modalidades do domínio Connect + unidades já carregadas.
 List<String> allModalityOptions() {
-  final options = <String>{
-    ...baseModalityCatalog,
-    for (final gym in mockGyms) ...gym.modalities,
-  };
-  final sorted = options.where((o) => o != '24h').toList()..sort((a, b) => a.compareTo(b));
+  final options = <String>{..._catalogOptions};
+  final sorted = options.where((o) => o != '24h').toList()
+    ..sort((a, b) => a.compareTo(b));
   return ['24h', ...sorted];
+}
+
+Future<void> ensureModalityCatalogLoaded() async {
+  if (_catalogOptions.isNotEmpty) return;
+  final domain = await ConnectDomain.load();
+  setModalityCatalogOptions(domain.modalityCatalog);
 }
 
 String modalityFilterLabel(String key) {

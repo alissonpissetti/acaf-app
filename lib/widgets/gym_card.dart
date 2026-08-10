@@ -38,11 +38,12 @@ class GymCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final planFrom = gym.plans.map((p) => p.pricePerMonth).reduce((a, b) => a < b ? a : b);
 
-    final hasPhoto = gym.heroImageAsset != null;
-    final onDarkHero = hasPhoto || gym.heroTint.computeLuminance() < 0.45;
-    final logoAsset = network.brandLogoAsset ?? gym.brandLogoAsset;
+    final hasCoverPhoto = GymHeroVisual.hasCoverPhoto(gym);
+    final logoAsset = network.logoSource ?? gym.brandLogoUrl ?? gym.brandLogoAsset;
     final showDistanceIndex = distanceRank != null;
-    final heroHeight = hasPhoto
+    final logoHeight = gym.heroImageAsset == null && logoAsset != null ? 56.0 : 48.0;
+    final logoReserve = logoAsset != null ? logoHeight * network.brandLogoWidthFactor + 28.0 : 0.0;
+    final heroHeight = hasCoverPhoto
         ? 120.0
         : showDistanceIndex
             ? 118.0
@@ -71,7 +72,7 @@ class GymCard extends StatelessWidget {
                     GymHeroVisual(
                       gym: gym,
                       network: network,
-                      overlayLogoHeight: gym.heroImageAsset == null && logoAsset != null ? 56 : 48,
+                      overlayLogoHeight: logoHeight,
                       showFallbackIcon: logoAsset == null,
                     ),
                     Padding(
@@ -82,40 +83,39 @@ class GymCard extends StatelessWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Spacer(),
                               if (distanceRank != null)
                                 _DistanceBadge(
                                   rank: distanceRank!,
                                   distanceKm: gym.distanceKm,
-                                  onDarkHero: onDarkHero,
-                                  alignEnd: true,
+                                  onDarkHero: true,
                                 ),
+                              const Spacer(),
                             ],
                           ),
                           const Spacer(),
-                          Text(
-                            'Associado ACAF',
-                            style: AppTypography.label.copyWith(
-                              color: onDarkHero ? Colors.white.withValues(alpha: 0.85) : AppColors.textMuted,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            network.name,
-                            style: AppTypography.cardTitle.copyWith(
-                              fontSize: 16,
-                              color: onDarkHero ? Colors.white : null,
-                            ),
-                            maxLines: showDistanceIndex ? 1 : 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Unidade ${gym.unitLabel}',
-                            style: AppTypography.caption.copyWith(
-                              color: onDarkHero ? Colors.white.withValues(alpha: 0.88) : AppColors.textMuted,
-                              fontWeight: FontWeight.w600,
+                          Padding(
+                            padding: EdgeInsets.only(right: logoReserve),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  network.name,
+                                  style: AppTypography.cardTitle.copyWith(
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: showDistanceIndex ? 1 : 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Unidade ${gym.unitLabel}',
+                                  style: AppTypography.caption.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.88),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -134,8 +134,10 @@ class GymCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        _Meta(icon: Icons.star_rounded, label: gym.rating.toStringAsFixed(1), accent: true),
-                        const SizedBox(width: 12),
+                        if (gym.hasRating) ...[
+                          _Meta(icon: Icons.star_rounded, label: gym.rating.toStringAsFixed(1), accent: true),
+                          const SizedBox(width: 12),
+                        ],
                         _Meta(icon: Icons.place_outlined, label: '${gym.distanceKm.toStringAsFixed(1)} km'),
                       ],
                     ),
@@ -162,42 +164,56 @@ class GymCard extends StatelessWidget {
                   ? _HomeOpenNetworkFooter(
                       planFrom: planFrom,
                       dailyPrice: gym.dailyPassPrice,
+                      showDailyPass: gym.dailyPassActive,
                       unitCount: networkUnitCount ?? 1,
                       onOpenNetwork: onTap,
                     )
-                  : Row(
-                      children: [
-                        Expanded(
-                          child: _PriceActionButton(
-                            label: 'Diária',
-                            value: 'R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
-                            primary: true,
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => DailyPassScreen(gym: gym),
-                                ),
-                              );
-                            },
-                          ),
+                  : gym.dailyPassActive
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: _PriceActionButton(
+                                label: 'Diária',
+                                value: 'R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
+                                primary: true,
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => DailyPassScreen(gym: gym),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _PriceActionButton(
+                                label: 'Planos a partir de',
+                                value: 'R\$ ${planFrom.toStringAsFixed(0)}',
+                                primary: false,
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => SubscriptionScreen(gym: gym),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        )
+                      : _PriceActionButton(
+                          label: 'Planos a partir de',
+                          value: 'R\$ ${planFrom.toStringAsFixed(0)}',
+                          primary: true,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => SubscriptionScreen(gym: gym),
+                              ),
+                            );
+                          },
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _PriceActionButton(
-                            label: 'Planos a partir de',
-                            value: 'R\$ ${planFrom.toStringAsFixed(0)}',
-                            primary: false,
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => SubscriptionScreen(gym: gym),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
             ),
           ],
         ),
@@ -211,18 +227,16 @@ class _DistanceBadge extends StatelessWidget {
     required this.rank,
     required this.distanceKm,
     this.onDarkHero = false,
-    this.alignEnd = false,
   });
 
   final int rank;
   final double distanceKm;
   final bool onDarkHero;
-  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (rank == 1)
           Padding(
@@ -234,7 +248,9 @@ class _DistanceBadge extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
               '#$rank mais próxima',
-              style: AppTypography.label.copyWith(color: AppColors.textMuted),
+              style: AppTypography.label.copyWith(
+                color: onDarkHero ? Colors.white.withValues(alpha: 0.72) : AppColors.textMuted,
+              ),
             ),
           ),
         Text(
@@ -279,12 +295,14 @@ class _HomeOpenNetworkFooter extends StatelessWidget {
   const _HomeOpenNetworkFooter({
     required this.planFrom,
     required this.dailyPrice,
+    required this.showDailyPass,
     required this.unitCount,
     required this.onOpenNetwork,
   });
 
   final double planFrom;
   final double dailyPrice;
+  final bool showDailyPass;
   final int unitCount;
   final VoidCallback onOpenNetwork;
 
@@ -295,14 +313,16 @@ class _HomeOpenNetworkFooter extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(
-              child: _PricingHighlightTile(
-                icon: Icons.qr_code_2_rounded,
-                label: 'Diária nesta unidade',
-                value: 'R\$ ${dailyPrice.toStringAsFixed(2)}',
+            if (showDailyPass) ...[
+              Expanded(
+                child: _PricingHighlightTile(
+                  icon: Icons.qr_code_2_rounded,
+                  label: 'Diária nesta unidade',
+                  value: 'R\$ ${dailyPrice.toStringAsFixed(2)}',
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
+              const SizedBox(width: 8),
+            ],
             Expanded(
               child: _PricingHighlightTile(
                 icon: Icons.card_membership_rounded,

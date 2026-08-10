@@ -1,17 +1,23 @@
 # acaf
 
-A new Flutter project.
+App Flutter **ACAF Connect** (usuário final).
 
-## Getting Started
+## Publicação automática
 
-This project is a starting point for a Flutter application.
+Cada push em `main` ou `master` compila e publica Android (Google Play) e iOS (TestFlight) com versão incrementada automaticamente.
 
-A few resources to get you started if this is your first Flutter project:
+Configuração de secrets e versionamento: [docs/RELEASE.md](docs/RELEASE.md).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Desenvolvimento local
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
+flutter run
+```
+
+Release local (requer assinatura):
+
+```bash
+flutter build appbundle --release
+flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
+```

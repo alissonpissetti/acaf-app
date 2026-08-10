@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/mock_enrollment_codes.dart';
+import '../models/company_enrollment.dart';
 import '../models/connect_product_plan.dart';
 import '../models/gym.dart';
 import '../models/primary_gym.dart';
-import '../models/user_account.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../widgets/account_empty_panel.dart';
+import '../widgets/billing_statement_section.dart';
 import '../widgets/connect_bottom_nav.dart';
 import '../widgets/connect_page_header.dart';
 import '../widgets/connect_primary_button.dart';
+import '../widgets/saved_payment_cards_section.dart';
 import 'connect_plan_checkout_screen.dart';
 import 'daily_pass_qr_screen.dart';
+import 'my_reservations_screen.dart';
 
 class UserAccountScreen extends StatelessWidget {
   const UserAccountScreen({super.key});
@@ -66,13 +69,23 @@ class UserAccountScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.section),
                     _SectionTitle('Cartões cadastrados'),
                     const SizedBox(height: AppSpacing.item),
-                    _SavedCardsSection(cards: appState.savedCards),
+                    SavedPaymentCardsSection(cards: appState.savedCards),
                     const SizedBox(height: AppSpacing.section),
                     _SectionTitle('Extrato financeiro'),
                     const SizedBox(height: AppSpacing.item),
-                    _BillingSection(entries: appState.billingEntries),
+                    BillingStatementSection(entries: appState.billingEntries),
                     const SizedBox(height: AppSpacing.section),
-                    const _DemoPersistenceSection(),
+                    _SectionTitle('Reservas de aula'),
+                    const SizedBox(height: AppSpacing.item),
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.event_available_rounded, color: AppColors.orange),
+                        title: const Text('Minhas reservas'),
+                        subtitle: const Text('Horários reservados em modalidades com agenda'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => MyReservationsScreen.open(context),
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.section),
                   ],
                 );
@@ -82,65 +95,6 @@ class UserAccountScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _DemoPersistenceSection extends StatelessWidget {
-  const _DemoPersistenceSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final persistenceOk = context.watch<AppState>().persistencePlatformAvailable;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionTitle('Demonstração'),
-        const SizedBox(height: 6),
-        Text(
-          persistenceOk
-              ? 'Vínculo, plano, carteira, cartões e extrato ficam salvos neste aparelho entre aberturas do app (mockup).'
-              : 'Persistência nativa indisponível nesta execução (comum após hot restart). '
-                  'Os dados valem só nesta sessão — pare o app e rode flutter run de novo para gravar no dispositivo.',
-          style: AppTypography.bodyMuted.copyWith(fontSize: 13),
-        ),
-        const SizedBox(height: AppSpacing.item),
-        OutlinedButton.icon(
-          onPressed: () => _confirmReset(context),
-          icon: const Icon(Icons.restart_alt_rounded, size: 20),
-          label: const Text('Resetar mockup e começar do zero'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _confirmReset(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Resetar demonstração?'),
-        content: const Text(
-          'Isso apaga neste dispositivo: empresa vinculada, planos, carteira, cartões e extrato. '
-          'Você voltará ao fluxo inicial como na primeira instalação.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Resetar')),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    await context.read<AppState>().resetDemoData();
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Mockup resetado. Dados locais removidos.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 }
 
@@ -275,7 +229,7 @@ class _SubscribedPlanSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (connect == null && gymSub == null && pendingPlanId == null) {
-      return _EmptyPanel(
+      return AccountEmptyPanel(
         icon: Icons.workspace_premium_outlined,
         message: 'Nenhum plano ativo. Escolha um plano ACAF Connect em Minha conta.',
         actionLabel: 'Ir para Minha conta',
@@ -398,7 +352,7 @@ class _WalletSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const _EmptyPanel(
+      return const AccountEmptyPanel(
         icon: Icons.account_balance_wallet_outlined,
         message: 'Sua carteira lista assinaturas de unidade e diárias compradas no app.',
       );
@@ -434,419 +388,6 @@ class _WalletSection extends StatelessWidget {
           ),
         );
       }).toList(),
-    );
-  }
-}
-
-class _SavedCardsSection extends StatelessWidget {
-  const _SavedCardsSection({required this.cards});
-
-  final List<SavedPaymentCard> cards;
-
-  @override
-  Widget build(BuildContext context) {
-    if (cards.isEmpty) {
-      return _EmptyPanel(
-        icon: Icons.credit_card_outlined,
-        message: 'Nenhum cartão cadastrado. O cartão é salvo ao concluir o checkout do plano Connect.',
-        actionLabel: 'Ver planos',
-        onAction: () {
-          context.read<AppState>().openPlanTab();
-          Navigator.of(context).popUntil((r) => r.isFirst);
-        },
-      );
-    }
-
-    final appState = context.watch<AppState>();
-    final connect = appState.activeConnectSubscription;
-
-    return Column(
-      children: [
-        ...cards.map((card) {
-          final locked = connect != null &&
-              card.lastFour == connect.cardLastFour &&
-              card.brand == connect.cardBrand;
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.item),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  children: [
-                    const Icon(Icons.credit_card_rounded, color: AppColors.orange, size: 28),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(card.brand, style: AppTypography.cardTitle.copyWith(fontSize: 14)),
-                              if (card.isDefault) ...[
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Principal',
-                                  style: AppTypography.label.copyWith(color: AppColors.orangeDark),
-                                ),
-                              ],
-                            ],
-                          ),
-                          Text(card.maskedNumber, style: AppTypography.bodyMuted),
-                          Text(
-                            '${card.holderName} · val. ${card.expiryLabel}',
-                            style: AppTypography.caption,
-                          ),
-                          if (locked)
-                            Text(
-                              'Cartão da assinatura Connect (não pode remover)',
-                              style: AppTypography.caption.copyWith(color: AppColors.orangeDark),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (!card.isDefault)
-                      IconButton(
-                        tooltip: 'Definir como principal',
-                        onPressed: () => appState.setDefaultPaymentCard(card.id),
-                        icon: const Icon(Icons.star_outline_rounded, size: 22),
-                      ),
-                    if (!locked)
-                      IconButton(
-                        tooltip: 'Remover',
-                        onPressed: () => appState.removePaymentCard(card.id),
-                        icon: Icon(Icons.delete_outline_rounded, color: AppColors.textMuted, size: 22),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Cadastro de novo cartão disponível no checkout do plano (mockup).'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            icon: const Icon(Icons.add_rounded, size: 20),
-            label: const Text('Adicionar cartão'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BillingSection extends StatelessWidget {
-  const _BillingSection({required this.entries});
-
-  final List<BillingEntry> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    if (entries.isEmpty) {
-      return const _EmptyPanel(
-        icon: Icons.receipt_long_outlined,
-        message: 'Nenhuma movimentação ainda. Compras e mensalidades aparecem aqui.',
-      );
-    }
-
-    final total = entries.fold<double>(0, (sum, e) => sum + e.amount);
-    final groups = _groupByDate(entries);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Resumo do extrato', style: AppTypography.cardTitle.copyWith(fontSize: 14)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${entries.length} lançamento${entries.length == 1 ? '' : 's'} · mais recentes primeiro',
-                      style: AppTypography.caption,
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('Total debitado', style: AppTypography.caption),
-                  Text(
-                    'R\$ ${total.toStringAsFixed(2)}',
-                    style: AppTypography.cardTitle.copyWith(fontSize: 17, color: AppColors.foreground),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.item),
-        Card(
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text('Lançamento', style: AppTypography.label.copyWith(fontSize: 10)),
-                    ),
-                    SizedBox(
-                      width: 88,
-                      child: Text(
-                        'Valor',
-                        textAlign: TextAlign.end,
-                        style: AppTypography.label.copyWith(fontSize: 10),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              for (var g = 0; g < groups.length; g++) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
-                  child: Text(
-                    _statementDateHeader(groups[g].$2.first.occurredAt),
-                    style: AppTypography.caption.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.foregroundSecondary,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-                for (var i = 0; i < groups[g].$2.length; i++) ...[
-                  _BillingStatementRow(entry: groups[g].$2[i]),
-                  if (i < groups[g].$2.length - 1 || g < groups.length - 1)
-                    const Divider(height: 1, indent: 56, endIndent: 14),
-                ],
-              ],
-              const SizedBox(height: 4),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  static List<(String, List<BillingEntry>)> _groupByDate(List<BillingEntry> entries) {
-    final order = <String>[];
-    final map = <String, List<BillingEntry>>{};
-    for (final entry in entries) {
-      final key = _formatDate(entry.occurredAt);
-      if (!map.containsKey(key)) order.add(key);
-      map.putIfAbsent(key, () => []).add(entry);
-    }
-    return order.map((key) => (key, map[key]!)).toList();
-  }
-
-  static String _statementDateHeader(DateTime date) {
-    const months = [
-      'janeiro',
-      'fevereiro',
-      'março',
-      'abril',
-      'maio',
-      'junho',
-      'julho',
-      'agosto',
-      'setembro',
-      'outubro',
-      'novembro',
-      'dezembro',
-    ];
-    return '${date.day} de ${months[date.month - 1]} de ${date.year}';
-  }
-
-  static String _statusLabel(BillingEntryStatus status) {
-    return switch (status) {
-      BillingEntryStatus.paid => 'Pago',
-      BillingEntryStatus.pending => 'Pendente',
-      BillingEntryStatus.failed => 'Falhou',
-    };
-  }
-}
-
-class _BillingStatementRow extends StatelessWidget {
-  const _BillingStatementRow({required this.entry});
-
-  final BillingEntry entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final lines = _BillingStatementRow._linesFor(entry);
-    final time =
-        '${entry.occurredAt.hour.toString().padLeft(2, '0')}:${entry.occurredAt.minute.toString().padLeft(2, '0')}';
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.orangeSoft,
-            child: Icon(_iconFor(entry.kind), size: 18, color: AppColors.orange),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(lines.title, style: AppTypography.cardTitle.copyWith(fontSize: 14)),
-                const SizedBox(height: 2),
-                Text(
-                  [time, if (lines.subtitle != null) lines.subtitle].join(' · '),
-                  style: AppTypography.caption,
-                ),
-                if (entry.cardLastFour != null) ...[
-                  const SizedBox(height: 2),
-                  Text('Cartão ···· ${entry.cardLastFour}', style: AppTypography.caption),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 88,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '- R\$ ${entry.amount.toStringAsFixed(2)}',
-                  style: AppTypography.cardTitle.copyWith(fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                _StatusChip(
-                  label: _BillingSection._statusLabel(entry.status),
-                  status: entry.status,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static IconData _iconFor(BillingEntryKind kind) {
-    return switch (kind) {
-      BillingEntryKind.dailyPass => Icons.qr_code_2_rounded,
-      BillingEntryKind.gymSubscription => Icons.fitness_center_rounded,
-      BillingEntryKind.connectSubscription => Icons.workspace_premium_rounded,
-    };
-  }
-
-  static _StatementLines _linesFor(BillingEntry entry) {
-    final parts = entry.description.split(' · ').map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
-
-    switch (entry.kind) {
-      case BillingEntryKind.dailyPass:
-        final gym = parts.length > 1 ? parts[1] : (parts.isNotEmpty ? parts.first : 'Diária');
-        return _StatementLines(title: 'Diária · $gym', subtitle: 'Check-in avulso');
-      case BillingEntryKind.gymSubscription:
-        return _StatementLines(
-          title: parts.isNotEmpty ? parts.first : 'Assinatura na unidade',
-          subtitle: 'Mensalidade da academia',
-        );
-      case BillingEntryKind.connectSubscription:
-        return _StatementLines(
-          title: parts.isNotEmpty ? parts.first : 'Assinatura ACAF Connect',
-          subtitle: 'Plano mensal Connect',
-        );
-    }
-  }
-}
-
-class _StatementLines {
-  const _StatementLines({required this.title, this.subtitle});
-
-  final String title;
-  final String? subtitle;
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label, required this.status});
-
-  final String label;
-  final BillingEntryStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final (bg, fg) = switch (status) {
-      BillingEntryStatus.paid => (AppColors.success.withValues(alpha: 0.12), AppColors.success),
-      BillingEntryStatus.pending => (AppColors.orangeSoft, AppColors.orangeDark),
-      BillingEntryStatus.failed => (AppColors.error.withValues(alpha: 0.12), AppColors.error),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: AppTypography.label.copyWith(fontSize: 9, color: fg, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-}
-
-class _EmptyPanel extends StatelessWidget {
-  const _EmptyPanel({
-    required this.icon,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final IconData icon;
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: AppColors.textMuted),
-          const SizedBox(height: 8),
-          Text(message, textAlign: TextAlign.center, style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 12),
-            TextButton(onPressed: onAction, child: Text(actionLabel!)),
-          ],
-        ],
-      ),
     );
   }
 }

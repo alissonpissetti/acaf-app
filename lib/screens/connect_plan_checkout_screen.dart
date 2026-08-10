@@ -227,7 +227,7 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
     final brand = _inferCardBrand(digits);
     final lastFour = digits.substring(digits.length - 4);
 
-    context.read<AppState>().activateConnectPlan(
+    await context.read<AppState>().activateConnectPlan(
           planId: _plan.id,
           cardBrand: brand,
           cardLastFour: lastFour,

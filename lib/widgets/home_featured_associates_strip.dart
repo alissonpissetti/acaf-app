@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/gym.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'gym_hero_visual.dart';
 
 /// Faixa horizontal estilo "Top of Week" (cards com imagem, nome e preço).
 class HomeFeaturedAssociatesStrip extends StatelessWidget {
@@ -71,45 +72,39 @@ class _FeaturedAssociateTile extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      ColoredBox(color: gym.heroTint),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            gym.heroIcon,
-                            size: 28,
-                            color: AppColors.foreground.withValues(alpha: 0.28),
-                          ),
-                        ),
+                      GymHeroVisual(
+                        gym: gym,
+                        showBrandLogo: false,
+                        overlayLogoHeight: 28,
                       ),
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.star_rounded, size: 12, color: AppColors.foreground),
-                              const SizedBox(width: 2),
-                              Text(
-                                gym.rating.toStringAsFixed(1),
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.foreground,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                      if (gym.hasRating)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded, size: 12, color: AppColors.foreground),
+                                const SizedBox(width: 2),
+                                Text(
+                                  gym.rating.toStringAsFixed(1),
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.foreground,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),

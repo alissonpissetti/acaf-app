@@ -36,14 +36,12 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
       _loading = true;
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-
-    if (!mounted) return;
-
-    final err = context.read<AppState>().redeemEnrollmentCode(
+    final err = await context.read<AppState>().redeemEnrollmentCode(
           _codeController.text,
           collaboratorName: _nameController.text,
         );
+
+    if (!mounted) return;
 
     setState(() => _loading = false);
 
@@ -151,7 +149,7 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
                 ),
                 const SizedBox(height: AppSpacing.tight),
                 Text(
-                  'Mockup: use ACAF-2026, RH-CURITIBA ou WELLNESS-01.',
+                  'Use o código enviado pelo RH da sua empresa.',
                   style: AppTypography.caption,
                 ),
               ],

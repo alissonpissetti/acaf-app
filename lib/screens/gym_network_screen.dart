@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
+import 'package:provider/provider.dart';
+
 import '../data/gym_network_repository.dart';
+import '../state/catalog_state.dart';
 import '../models/gym.dart';
 import '../models/gym_network.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
-import '../widgets/gym_collapsed_app_bar_title.dart';
+import '../widgets/gym_hero_sliver_app_bar.dart';
+import '../widgets/gym_hero_visual.dart';
 import '../widgets/gym_photo_gallery.dart';
 import '../widgets/gym_unit_enrollment_content.dart';
 
@@ -25,37 +29,52 @@ class GymNetworkScreen extends StatefulWidget {
 }
 
 class _GymNetworkScreenState extends State<GymNetworkScreen> {
-  late List<Gym> _units;
-  late Gym _selected;
+  List<Gym>? _units;
+  Gym? _selected;
+  bool _initialized = false;
+  final _scrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-    final repository = GymNetworkRepository();
-    _units = repository.unitsForNetwork(widget.network.id);
-    _selected = _resolveInitialUnit();
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  Gym _resolveInitialUnit() {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
+    final repository = GymNetworkRepository(context.read<CatalogState>());
+    _units = repository.unitsForNetwork(widget.network.id);
+    _selected = _resolveInitialUnit(_units!);
+  }
+
+  Gym _resolveInitialUnit(List<Gym> units) {
     final initial = widget.initialUnit;
     if (initial != null) {
-      final match = _units.where((u) => u.id == initial.id);
+      final match = units.where((u) => u.id == initial.id);
       if (match.isNotEmpty) return match.first;
     }
-    return _units.first;
+    return units.first;
   }
 
   void _selectUnit(Gym unit) {
-    if (unit.id == _selected.id) return;
+    if (_selected == null || unit.id == _selected!.id) return;
     setState(() => _selected = unit);
   }
 
   @override
   Widget build(BuildContext context) {
-    final gym = _selected;
-    final hasHeroPhoto = gym.heroImageAsset != null;
-    final minDaily = _units.map((u) => u.dailyPassPrice).reduce((a, b) => a < b ? a : b);
-    final minPlan = _units
+    if (_units == null || _selected == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final units = _units!;
+    final gym = _selected!;
+    final hasHeroPhoto = GymHeroVisual.hasCoverPhoto(gym);
+    final minDaily = units.map((u) => u.dailyPassPrice).reduce((a, b) => a < b ? a : b);
+    final minPlan = units
         .expand((u) => u.plans.map((p) => p.pricePerMonth))
         .reduce((a, b) => a < b ? a : b);
 
@@ -63,39 +82,19 @@ class _GymNetworkScreenState extends State<GymNetworkScreen> {
       backgroundColor: AppColors.surface,
       bottomNavigationBar: gymUnitStickyActions(context, gym),
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
-          SliverAppBar(
-            expandedHeight: hasHeroPhoto ? 200 : 140,
-            pinned: true,
-            backgroundColor: AppColors.surface,
-            foregroundColor: AppColors.foreground,
-            iconTheme: IconThemeData(
-              color: hasHeroPhoto ? Colors.white : AppColors.foreground,
-            ),
-            surfaceTintColor: Colors.transparent,
-            centerTitle: false,
-            titleSpacing: 0,
-            title: GymCollapsedAppBarTitle(label: widget.network.name),
-            flexibleSpace: FlexibleSpaceBar(
-              centerTitle: false,
-              expandedTitleScale: 1,
-              title: hasHeroPhoto
-                  ? null
-                  : Text(
-                      gym.unitLabel,
-                      style: AppTypography.cardTitle.copyWith(
-                        color: Colors.white,
-                        shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
-                      ),
-                    ),
-              titlePadding: const EdgeInsetsDirectional.only(start: 48, bottom: 12, end: 12),
-              background: GymPhotoGallery(
-                key: ValueKey(gym.id),
-                gym: gym,
-                network: widget.network,
-                height: 200,
-                logoHeight: 64,
-              ),
+          GymHeroSliverAppBar(
+            scrollController: _scrollController,
+            title: widget.network.name,
+            hasHeroPhoto: hasHeroPhoto,
+            expandedSubtitle: gym.unitLabel,
+            heroBackground: GymPhotoGallery(
+              key: ValueKey(gym.id),
+              gym: gym,
+              network: widget.network,
+              height: GymHeroSliverAppBar.expandedHeightWithPhoto,
+              logoHeight: 64,
             ),
           ),
           SliverPadding(
@@ -104,7 +103,7 @@ class _GymNetworkScreenState extends State<GymNetworkScreen> {
               delegate: SliverChildListDelegate([
                 _NetworkSummaryStrip(
                   network: widget.network,
-                  unitCount: _units.length,
+                  unitCount: units.length,
                   minDaily: minDaily,
                   minPlan: minPlan,
                 ),
@@ -117,7 +116,7 @@ class _GymNetworkScreenState extends State<GymNetworkScreen> {
                 ),
                 const SizedBox(height: AppSpacing.item),
                 _NetworkUnitPicker(
-                  units: _units,
+                  units: units,
                   selected: gym,
                   onSelected: _selectUnit,
                 ),

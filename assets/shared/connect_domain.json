@@ -3,8 +3,8 @@
   "acafConnectFeePercent": 20,
   "acafDailyFeePercent": 20,
   "feeModel": {
-    "gymPortalVisible": "20% sobre diárias e sobre o valor mensal do plano Connect pago pelo aluno vinculado à unidade.",
-    "corporateNotShownToGym": "20% adicional sobre o contrato corporativo (empresa) — faturado à empresa, não aparece neste painel."
+    "gymPortalVisible": "20% sobre o valor de cada diária e sobre o total mensal dos planos Connect (colaborador + benefício corporativo).",
+    "corporateNotShownToGym": "Legado: o benefício corporativo integra o total visível ao parceiro; a taxa de 20% incide sobre a soma."
   },
   "connectPlans": [
     {
@@ -45,21 +45,30 @@
   ],
   "modalityCatalog": [
     "Musculação",
-    "Cardio",
-    "Funcional",
-    "HIIT",
-    "Cross Training",
-    "Yoga",
-    "Pilates",
     "Natação",
+    "Bike Indoor",
     "Hidroginástica",
-    "Aulas em grupo",
-    "Personal"
+    "Boxe",
+    "Pilates",
+    "Hatha Yoga",
+    "Full Body",
+    "Funcional",
+    "FitDance"
   ],
   "checkInCodePatterns": {
     "connectMemberPrefix": "CHK-",
     "dailyPassPrefix": "ACAF-",
     "memberCodeHelp": "CHK-{UNIT_ID}-{DAY_OF_MONTH} — gerado no app associado",
     "dailyPassCodeHelp": "ACAF-{TOKEN}-{UNIT_ID} — QR da diária na carteira"
+  },
+  "checkInGeo": {
+    "maxRadiusKm": 1,
+    "help": "Check-in no app só é permitido dentro de 1 km da unidade, com GPS ativo. A liberação na academia é automática."
+  },
+  "checkInLimits": {
+    "maxPerPersonPerDay": 1,
+    "connectScope": "network",
+    "dailyPassScope": "unit",
+    "help": "Cada pessoa pode fazer apenas 1 check-in por dia (Connect: em qualquer unidade da rede; diária: na unidade da compra)."
   }
 }

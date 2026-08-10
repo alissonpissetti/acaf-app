@@ -1,0 +1,6 @@
+# Copie para key.properties e preencha para builds release locais.
+# No CI, tool/ci/setup_android_signing.sh gera este arquivo a partir de secrets.
+storePassword=
+keyPassword=
+keyAlias=
+storeFile=upload-keystore.jks

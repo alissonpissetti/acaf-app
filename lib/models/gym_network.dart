@@ -5,6 +5,7 @@ class GymNetwork {
     required this.name,
     this.tagline,
     this.brandLogoAsset,
+    this.brandLogoUrl,
     this.brandLogoWidthFactor = 1,
   });
 
@@ -12,5 +13,8 @@ class GymNetwork {
   final String name;
   final String? tagline;
   final String? brandLogoAsset;
+  final String? brandLogoUrl;
   final double brandLogoWidthFactor;
+
+  String? get logoSource => brandLogoUrl ?? brandLogoAsset;
 }

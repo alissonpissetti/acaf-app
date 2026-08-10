@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/mock_search_areas.dart';
+import '../data/search_areas.dart';
 import '../state/location_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -78,10 +78,10 @@ class _LocationPickerSheet extends StatelessWidget {
             ),
             child: ListView.separated(
               shrinkWrap: true,
-              itemCount: mockSearchAreas.length,
+              itemCount: location.availableAreas.length,
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final area = mockSearchAreas[index];
+                final area = location.availableAreas[index];
                 final selected = !location.usingCurrentLocation && location.manualArea?.id == area.id;
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
