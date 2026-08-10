@@ -45,8 +45,8 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  # Ícone gerado a partir de acaf_connect_lockup.jpg (logo oficial).
-  image_path: assets/branding/app_icon.png
+  # Símbolo ACAF Connect (igual ao header interno): fundo branco, marca centralizada.
+  image_path: assets/branding/acaf_connect_lockup.png
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: assets/branding/app_icon_foreground.png
   remove_alpha_ios: true
@@ -65,10 +65,6 @@ flutter:
   assets:
     - assets/branding/
     - assets/shared/
-    - assets/gyms/carpe_diem/
-    - assets/gyms/viver_sports/
-    - assets/gyms/equilibrium/
-    - assets/gyms/wolf_fitness/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

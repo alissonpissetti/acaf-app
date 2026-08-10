@@ -149,7 +149,7 @@ List<String> _resolveModalities({
     return _filterToUnit(spec.includedModalities, unitModalities);
   }
 
-  final limit = _mockModalityCapForTier(connect.id, unitModalities.length);
+  final limit = _modalityCapForTier(connect.id, unitModalities.length);
   return _expandModalities(
     unitModalities: unitModalities,
     limit: limit,
@@ -157,8 +157,8 @@ List<String> _resolveModalities({
   );
 }
 
-/// Mock: quando a unidade não lista modalidades no spec, simula configuração progressiva por tier.
-int? _mockModalityCapForTier(String connectPlanId, int unitCount) {
+/// Quando a unidade não lista modalidades no spec, amplia progressivamente por tier Connect.
+int? _modalityCapForTier(String connectPlanId, int unitCount) {
   if (connectPlanId == 'connect-total') return null;
   final idx = connectPlanTierIndex(connectPlanId);
   if (idx < 0) return unitCount;

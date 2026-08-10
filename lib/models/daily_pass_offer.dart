@@ -57,7 +57,7 @@ class DailyPassOffer {
     );
   }
 
-  /// Fallback quando a API não está disponível (mock offline).
+  /// Constrói oferta integral a partir de dados da unidade (catálogo).
   factory DailyPassOffer.integralFromGym({
     required String id,
     required double price,

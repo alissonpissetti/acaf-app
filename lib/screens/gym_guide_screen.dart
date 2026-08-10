@@ -15,7 +15,6 @@ import '../widgets/gym_card_skeleton.dart';
 import '../widgets/home_location_search_block.dart';
 import '../widgets/home_quick_actions_panel.dart';
 import '../widgets/section_header.dart';
-import 'connect_placeholder_screen.dart';
 import 'financial_screen.dart';
 import 'gym_network_screen.dart';
 import 'member_check_in_screen.dart';
@@ -135,10 +134,11 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
     );
   }
 
-  void _openPlaceholder(String title, String description, IconData icon) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ConnectPlaceholderScreen(title: title, description: description, icon: icon),
+  void _openProfilePlaceholder() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Perfil e documentos do colaborador em breve.'),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -193,11 +193,7 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
                 HomeQuickAction(
                   icon: Icons.person_outline_rounded,
                   label: 'Meus dados',
-                  onTap: () => _openPlaceholder(
-                    'Meus dados',
-                    'Perfil, documentos e preferências do colaborador.',
-                    Icons.person_outline_rounded,
-                  ),
+                  onTap: _openProfilePlaceholder,
                 ),
                 HomeQuickAction(
                   icon: Icons.receipt_long_outlined,

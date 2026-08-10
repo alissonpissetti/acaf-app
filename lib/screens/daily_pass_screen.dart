@@ -65,14 +65,6 @@ class _DailyPassScreenState extends State<DailyPassScreen> {
   }
 
   Future<void> _loadOffers() async {
-    final fallback = [
-      DailyPassOffer.integralFromGym(
-        id: 'base',
-        price: gym.dailyPassPrice,
-        modalities: gym.dailyPassIncludedModalities,
-      ),
-    ];
-
     final response = await AcafApi().fetchDailyPassOffers(
       unitId: gym.id,
       date: _todayIso(),
@@ -80,10 +72,10 @@ class _DailyPassScreenState extends State<DailyPassScreen> {
 
     if (!mounted) return;
 
-    final offers = response?.offers.isNotEmpty == true ? response!.offers : fallback;
+    final offers = response?.offers ?? const <DailyPassOffer>[];
     setState(() {
       _offers = offers;
-      _selected = offers.first;
+      _selected = offers.isNotEmpty ? offers.first : null;
       _loading = false;
     });
   }
@@ -112,6 +104,14 @@ class _DailyPassScreenState extends State<DailyPassScreen> {
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: CircularProgressIndicator(color: AppColors.orange),
+              ),
+            )
+          else if (_offers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'Nenhuma oferta de diária disponível hoje nesta unidade. Tente mais tarde ou consulte a recepção.',
+                style: AppTypography.bodyMuted,
               ),
             )
           else

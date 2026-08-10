@@ -6,6 +6,13 @@ import 'package:flutter/foundation.dart';
 class ApiConfig {
   static const int defaultPort = 8787;
 
+  /// API de produção (Coolify).
+  static const String productionBaseUrl =
+      'http://ucskoskgsgcswk0sock84sg4.76.13.66.204.sslip.io';
+
+  /// Override em build: `--dart-define=ACAF_API_URL=http://...`
+  static const String _dartDefineBaseUrl = String.fromEnvironment('ACAF_API_URL');
+
   /// Override em testes: `ApiConfig.overrideBaseUrl = 'http://...'`
   static String? overrideBaseUrl;
 
@@ -13,6 +20,15 @@ class ApiConfig {
     final override = overrideBaseUrl?.trim();
     if (override != null && override.isNotEmpty) {
       return override.replaceAll(RegExp(r'/+$'), '');
+    }
+
+    final fromDefine = _dartDefineBaseUrl.trim();
+    if (fromDefine.isNotEmpty) {
+      return fromDefine.replaceAll(RegExp(r'/+$'), '');
+    }
+
+    if (kReleaseMode) {
+      return productionBaseUrl;
     }
 
     if (kIsWeb) {

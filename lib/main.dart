@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'config/api_config.dart';
 
 import 'data/associates_repository.dart';
 import 'data/connect_domain.dart';
@@ -26,7 +29,7 @@ Future<void> main() async {
     await ConnectDomain.load();
     await catalogState.load();
   } catch (e) {
-    bootstrapError = e is StateError ? e.message : 'Não foi possível conectar à API local.';
+    bootstrapError = e is StateError ? e.message : 'Não foi possível conectar à API.';
   }
 
   final associatesRepository = AssociatesRepository(catalogState);
@@ -90,9 +93,13 @@ class ApiBootstrapErrorScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(message),
               const SizedBox(height: 8),
-              const Text(
-                'Verifique que acaf-api está rodando em http://127.0.0.1:8787 '
-                '(Android emulador: http://10.0.2.2:8787).',
+              Text(
+                kReleaseMode
+                    ? 'Verifique sua conexão com a internet e tente novamente. '
+                        'API: ${ApiConfig.productionBaseUrl}'
+                    : 'Em desenvolvimento, verifique que acaf-api está rodando em '
+                        'http://127.0.0.1:8787 (Android emulador: http://10.0.2.2:8787). '
+                        'Para testar produção: flutter run --dart-define=ACAF_API_URL=${ApiConfig.productionBaseUrl}',
               ),
               const Spacer(),
               FilledButton(

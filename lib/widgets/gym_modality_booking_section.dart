@@ -46,7 +46,7 @@ class _GymModalityBookingSectionState extends State<GymModalityBookingSection> {
   }
 }
 
-/// Versão estática quando scheduledModalities já é conhecido (rede mock).
+/// Versão estática quando scheduledModalities já é conhecido.
 class GymModalityBookingStatic extends StatelessWidget {
   const GymModalityBookingStatic({
     super.key,

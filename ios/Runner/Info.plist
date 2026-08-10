@@ -26,7 +26,22 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>76.13.66.204.sslip.io</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>O ACAF Connect usa sua localização para confirmar que você está na academia ao fazer check-in.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>O ACAF Connect usa sua localização para confirmar que você está na academia ao fazer check-in.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
