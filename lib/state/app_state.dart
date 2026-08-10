@@ -702,6 +702,7 @@ class AppState extends ChangeNotifier {
       validUntil: validUntil,
       offerId: offer.id,
       occurrenceDate: occurrenceDate,
+      companyName: _companyEnrollment?.companyName,
     );
     if (!issued) return false;
     _wallet.insert(
@@ -737,9 +738,6 @@ class AppState extends ChangeNotifier {
         enrollment!.collaboratorLabel!.trim().isNotEmpty) {
       return enrollment.collaboratorLabel!.trim();
     }
-    if (enrollment?.companyName != null && enrollment!.companyName.trim().isNotEmpty) {
-      return enrollment.companyName.trim();
-    }
-    return 'Visitante app';
+    return 'Colaborador ACAF';
   }
 }

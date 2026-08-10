@@ -451,6 +451,7 @@ class AcafApi {
     required DateTime validUntil,
     String? offerId,
     String? occurrenceDate,
+    String? companyName,
   }) async {
     final uri = _uri('/check-ins/issue');
     if (uri == null) return false;
@@ -467,6 +468,8 @@ class AcafApi {
           'type': 'daily_pass',
           if (offerId != null) 'offerId': offerId,
           if (occurrenceDate != null) 'occurrenceDate': occurrenceDate,
+          if (companyName != null && companyName.trim().isNotEmpty)
+            'companyName': companyName.trim(),
         }),
       );
       final res = await req.close();
