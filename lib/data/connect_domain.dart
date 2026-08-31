@@ -1,36 +1,36 @@
 import '../data/connect_plans.dart';
 import '../models/connect_product_plan.dart';
-import '../services/acaf_api.dart';
+import '../services/connect_api.dart';
 import 'modality_catalog.dart';
 
-/// Domínio ACAF Connect (planos e catálogo de modalidades) via acaf-api.
+/// Domínio Connect (planos e catálogo de modalidades) via connect-api.
 class ConnectDomain {
   ConnectDomain._({
     required this.schemaVersion,
-    required this.acafDailyFeePercent,
+    required this.dailyFeePercent,
     required this.connectPlans,
     required this.modalityCatalog,
   });
 
   final int schemaVersion;
-  final double acafDailyFeePercent;
+  final double dailyFeePercent;
   final List<ConnectDomainPlan> connectPlans;
   final List<String> modalityCatalog;
 
   static ConnectDomain? _cache;
 
-  static Future<ConnectDomain> load({AcafApi? api}) async {
+  static Future<ConnectDomain> load({ConnectApi? api}) async {
     if (_cache != null) return _cache!;
-    final client = api ?? AcafApi();
+    final client = api ?? ConnectApi();
     final map = await client.fetchDomain();
     if (map == null) {
-      throw StateError('Não foi possível carregar o domínio Connect da API.');
+      throw StateError('Não foi possível carregar a configuração da plataforma da API.');
     }
 
     final domain = ConnectDomain._(
       schemaVersion: map['schemaVersion'] as int? ?? 1,
-      acafDailyFeePercent: (map['acafConnectFeePercent'] as num?)?.toDouble() ??
-          (map['acafDailyFeePercent'] as num?)?.toDouble() ??
+      dailyFeePercent: (map['connectFeePercent'] as num?)?.toDouble() ??
+          (map['dailyFeePercent'] as num?)?.toDouble() ??
           20,
       connectPlans: (map['connectPlans'] as List<dynamic>)
           .map((e) => ConnectDomainPlan.fromJson(e as Map<String, dynamic>))
@@ -57,9 +57,9 @@ class ConnectDomain {
               tierIndex: plan.tierIndex,
               highlight: plan.id == highlightId,
               benefits: [
-                'Rede completa de associados ACAF Connect',
+                'Rede completa de associados',
                 'Check-in pelo app · 1 visita/dia',
-                if (plan.tierIndex >= 2) 'Suporte prioritário ACAF Connect',
+                if (plan.tierIndex >= 2) 'Suporte prioritário',
               ],
             ),
           )

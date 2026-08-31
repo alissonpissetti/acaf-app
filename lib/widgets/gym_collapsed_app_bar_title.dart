@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'brand_logo.dart';
 import '../theme/app_typography.dart';
 
-/// Título da AppBar fixa ao rolar (logo ACAF Connect + nome da academia).
+/// Título da AppBar fixa ao rolar (logo Connect + nome da academia).
 class GymCollapsedAppBarTitle extends StatelessWidget {
   const GymCollapsedAppBarTitle({
     super.key,

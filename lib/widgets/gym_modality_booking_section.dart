@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/gym.dart';
-import '../services/acaf_api.dart';
+import '../services/connect_api.dart';
 import '../screens/modality_booking_screen.dart';
 
 /// Busca modalidades com agenda na API e exibe botões de reserva.
@@ -15,7 +15,7 @@ class GymModalityBookingSection extends StatefulWidget {
 }
 
 class _GymModalityBookingSectionState extends State<GymModalityBookingSection> {
-  final _api = AcafApi();
+  final _api = ConnectApi();
   List<String> _scheduledModalities = const [];
   bool _loaded = false;
 

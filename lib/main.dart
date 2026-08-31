@@ -62,7 +62,7 @@ class AcafApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ACAF Connect',
+      title: 'Connect',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       home: bootstrapError != null
@@ -97,9 +97,9 @@ class ApiBootstrapErrorScreen extends StatelessWidget {
                 kReleaseMode
                     ? 'Verifique sua conexão com a internet e tente novamente. '
                         'API: ${ApiConfig.productionBaseUrl}'
-                    : 'Em desenvolvimento, verifique que acaf-api está rodando em '
+                    : 'Em desenvolvimento, verifique que connect-api está rodando em '
                         'http://127.0.0.1:8787 (Android emulador: http://10.0.2.2:8787). '
-                        'Para testar produção: flutter run --dart-define=ACAF_API_URL=${ApiConfig.productionBaseUrl}',
+                        'Para testar produção: flutter run --dart-define=CONNECT_API_URL=${ApiConfig.productionBaseUrl}',
               ),
               const Spacer(),
               FilledButton(

@@ -185,7 +185,7 @@ List<String> _benefitsFor(
   return <String>[
     if (scoped.isNotEmpty) 'Modalidades: ${scoped.join(', ')}',
     '1 check-in/dia nesta unidade',
-    'Tier ${connect.tierShortName} · ACAF Connect',
+    'Tier ${connect.tierShortName} · Connect',
   ];
 }
 
@@ -248,7 +248,7 @@ bool isUnitPlanSubscribable(SubscriptionPlan plan, String userConnectPlanId) {
   return eligibleUnitPlansForConnect([plan], userConnectPlanId).isNotEmpty;
 }
 
-/// Tier do plano na unidade acima do ACAF Connect atual (só vitrine / upgrade).
+/// Tier do plano na unidade acima do Connect atual (só vitrine / upgrade).
 bool isUnitPlanAboveUserConnectTier(SubscriptionPlan plan, String userConnectPlanId) {
   if (!isUnitPlanSubscribable(plan, userConnectPlanId)) {
     final userIdx = connectPlanTierIndex(userConnectPlanId);

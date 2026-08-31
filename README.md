@@ -1,6 +1,6 @@
 # acaf
 
-App Flutter **ACAF Connect** (usuário final).
+App Flutter **Connect** (usuário final).
 
 ## Publicação automática
 

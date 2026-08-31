@@ -17,8 +17,8 @@ class AppStatePersistence {
   AppStatePersistence({AssociatesRepository? repository})
       : _repository = repository;
 
-  static const storageKey = 'acaf_connect_session_v1';
-  static const legacyStorageKey = 'acaf_connect_mock_state_v1';
+  static const storageKey = 'connect_session_v1';
+  static const legacyStorageKey = 'connect_mock_state_v1';
 
   final AssociatesRepository? _repository;
 
@@ -32,13 +32,13 @@ class AppStatePersistence {
       return await SharedPreferences.getInstance();
     } on PlatformException catch (e, st) {
       _platformAvailable = false;
-      debugPrint('ACAF: SharedPreferences indisponível (${e.message}). '
+      debugPrint('Connect: SharedPreferences indisponível (${e.message}). '
           'Use flutter run (rebuild completo). Cache só nesta sessão.');
       debugPrint('$st');
       return null;
     } catch (e, st) {
       _platformAvailable = false;
-      debugPrint('ACAF: erro ao abrir SharedPreferences: $e');
+      debugPrint('Connect: erro ao abrir SharedPreferences: $e');
       debugPrint('$st');
       return null;
     }
@@ -55,7 +55,7 @@ class AppStatePersistence {
       if (_repository == null) return null;
       return AppStateSnapshot.fromJson(map, _repository!);
     } catch (e, st) {
-      debugPrint('ACAF: falha ao carregar sessão local: $e');
+      debugPrint('Connect: falha ao carregar sessão local: $e');
       debugPrint('$st');
       return null;
     }
@@ -71,7 +71,7 @@ class AppStatePersistence {
         await prefs.remove(legacyStorageKey);
       }
     } catch (e, st) {
-      debugPrint('ACAF: falha ao salvar sessão local: $e');
+      debugPrint('Connect: falha ao salvar sessão local: $e');
       debugPrint('$st');
     }
   }
@@ -85,7 +85,7 @@ class AppStatePersistence {
         await prefs.remove(legacyStorageKey);
       }
     } catch (e, st) {
-      debugPrint('ACAF: falha ao limpar sessão local: $e');
+      debugPrint('Connect: falha ao limpar sessão local: $e');
       debugPrint('$st');
     }
   }

@@ -17,7 +17,7 @@ class SavedPaymentCardsSection extends StatelessWidget {
     if (cards.isEmpty) {
       return AccountEmptyPanel(
         icon: Icons.credit_card_outlined,
-        message: 'Nenhum cartão cadastrado. O cartão é salvo ao concluir o checkout do plano Connect.',
+        message: 'Nenhum cartão cadastrado. O cartão é salvo ao concluir o checkout do plano.',
         actionLabel: 'Ver planos',
         onAction: () {
           context.read<AppState>().openPlanTab();
@@ -68,7 +68,7 @@ class SavedPaymentCardsSection extends StatelessWidget {
                           ),
                           if (locked)
                             Text(
-                              'Cartão da assinatura Connect (não pode remover)',
+                              'Cartão da assinatura (não pode remover)',
                               style: AppTypography.caption.copyWith(color: AppColors.orangeDark),
                             ),
                         ],

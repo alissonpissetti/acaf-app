@@ -74,7 +74,7 @@ bundle exec fastlane android deploy
 
 ## Primeiro deploy
 
-1. Configure todos os secrets no repositório `alissonpissetti/acaf-app`.
+1. Configure todos os secrets no repositório `alissonpissetti/connect-app`.
 2. Faça push em `main` — o workflow roda automaticamente.
 3. Android: build aparece na faixa **internal** do Play Console.
 4. iOS: build aparece em **TestFlight** (não envia para revisão da App Store).

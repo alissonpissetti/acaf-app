@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-/// URL base da acaf-api (sem `/api`).
+/// URL base da connect-api (sem `/api`).
 class ApiConfig {
   static const int defaultPort = 8787;
 
@@ -10,8 +10,8 @@ class ApiConfig {
   static const String productionBaseUrl =
       'http://ucskoskgsgcswk0sock84sg4.76.13.66.204.sslip.io';
 
-  /// Override em build: `--dart-define=ACAF_API_URL=http://...`
-  static const String _dartDefineBaseUrl = String.fromEnvironment('ACAF_API_URL');
+  /// Override em build: `--dart-define=CONNECT_API_URL=http://...`
+  static const String _dartDefineBaseUrl = String.fromEnvironment('CONNECT_API_URL');
 
   /// Override em testes: `ApiConfig.overrideBaseUrl = 'http://...'`
   static String? overrideBaseUrl;

@@ -1,4 +1,4 @@
-/// Marca ACAF Connect — lockup oficial (PNG com fundo transparente).
+/// Marca — lockup oficial (PNG com fundo transparente).
 abstract final class BrandAssets {
-  static const connectLockup = 'assets/branding/acaf_connect_lockup.png';
+  static const connectLockup = 'assets/branding/connect_lockup.png';
 }

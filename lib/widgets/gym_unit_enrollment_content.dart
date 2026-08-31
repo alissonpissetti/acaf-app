@@ -176,7 +176,7 @@ List<Widget> gymUnitEnrollmentSections(
       GymEnrollmentOptionCard(
         icon: Icons.workspace_premium_outlined,
         title: 'Assinatura mensal na unidade',
-        subtitle: 'Ative um plano ACAF Connect em Minha conta para ver opções aqui.',
+        subtitle: 'Ative um plano app em Minha conta para ver opções aqui.',
         onTap: () => openConnectPlanTab(context),
       )
     else
@@ -184,7 +184,7 @@ List<Widget> gymUnitEnrollmentSections(
         icon: Icons.card_membership_rounded,
         title: 'Assinatura mensal',
         subtitle: subscribable.isEmpty
-            ? 'Veja os planos abaixo · faça upgrade do ACAF Connect para assinar tiers superiores.'
+            ? 'Veja os planos abaixo · faça upgrade do plano para assinar tiers superiores.'
             : '${allPlans.length} plano${allPlans.length == 1 ? '' : 's'} na unidade · '
                 'assine até seu ${connectPlan?.name ?? 'tier'} · '
                 'desde R\$ ${cheapestSubscribable!.toStringAsFixed(2)}',
@@ -241,13 +241,13 @@ List<Widget> gymUnitEnrollmentSections(
     if (connectSub != null && connectPlan != null)
       Text(
         'Todos os tiers configurados nesta unidade. Você assina até o ${connectPlan.name}; '
-        'planos acima mostram o que libera um upgrade no ACAF Connect.',
+        'planos acima mostram o que libera um upgrade no app.',
         style: AppTypography.bodyMuted.copyWith(fontSize: 13),
       ),
     const SizedBox(height: AppSpacing.item),
     if (connectSub == null)
       _UnitPlansEmptyState(
-        message: 'Vincule e ative um plano ACAF Connect para listar os planos compatíveis desta unidade.',
+        message: 'Vincule e ative um plano app para listar os planos compatíveis desta unidade.',
         actionLabel: 'Ir para Minha conta',
         onAction: () => openConnectPlanTab(context),
       )
@@ -318,7 +318,7 @@ List<Widget> gymUnitEnrollmentSections(
                                   )
                                 else if (isUpgrade)
                                   _UnitPlanBadge(
-                                    label: 'Upgrade ACAF Connect',
+                                    label: 'Upgrade de plano',
                                     foreground: AppColors.foregroundSecondary,
                                     background: AppColors.surface,
                                   ),

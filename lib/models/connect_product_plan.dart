@@ -17,11 +17,11 @@ class ConnectProductPlan {
   final bool highlight;
   final int tierIndex;
 
-  /// Ex.: "Start", "Plus" (sem prefixo ACAF).
-  String get tierShortName => name.replaceFirst('ACAF ', '');
+  /// Ex.: "Start", "Plus" (sem prefixo da marca).
+  String get tierShortName => name.replaceFirst('Connect ', '');
 }
 
-/// Assinatura mensal ACAF Connect ativa (cartão cadastrado).
+/// Assinatura mensal Connect ativa (cartão cadastrado).
 class ActiveConnectSubscription {
   ActiveConnectSubscription({
     required this.planId,

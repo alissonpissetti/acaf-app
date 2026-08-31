@@ -2,19 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "ACAF Connect (apresentação — profile)",
+      "name": "Connect (apresentação — profile)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "profile"
     },
     {
-      "name": "ACAF Connect (release)",
+      "name": "Connect (release)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "release"
     },
     {
-      "name": "ACAF Connect (debug)",
+      "name": "Connect (debug)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug"

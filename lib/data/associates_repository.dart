@@ -4,7 +4,7 @@ import '../models/gym_network.dart';
 import '../state/catalog_state.dart';
 import 'facility_filter_catalog.dart';
 
-/// Fonte de associados da rede ACAF (acaf-api).
+/// Fonte de associados da rede Connect (connect-api).
 class AssociatesRepository {
   static const homePageSize = 10;
 

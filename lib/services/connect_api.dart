@@ -5,9 +5,9 @@ import '../config/api_config.dart';
 import '../models/daily_pass_offer.dart';
 import '../models/modality_schedule.dart';
 
-/// Cliente HTTP da acaf-api para o app associado.
-class AcafApi {
-  AcafApi({String? baseUrl}) : _baseUrl = (baseUrl ?? ApiConfig.resolveBaseUrl()).replaceAll(RegExp(r'/+$'), '');
+/// Cliente HTTP da connect-api para o app associado.
+class ConnectApi {
+  ConnectApi({String? baseUrl}) : _baseUrl = (baseUrl ?? ApiConfig.resolveBaseUrl()).replaceAll(RegExp(r'/+$'), '');
 
   final String _baseUrl;
 

@@ -60,7 +60,7 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
             Text('Pagamento recorrente', style: AppTypography.sectionTitle),
             const SizedBox(height: 6),
             Text(
-              'Cadastre seu cartão para débito automático mensal do plano ACAF Connect.',
+              'Cadastre seu cartão para débito automático mensal do plano app.',
               style: AppTypography.bodyMuted,
             ),
             const SizedBox(height: AppSpacing.block),
@@ -276,7 +276,7 @@ class _PlanSummaryCard extends StatelessWidget {
               style: AppTypography.caption.copyWith(fontWeight: FontWeight.w700, color: AppColors.orange),
             ),
             const SizedBox(height: 8),
-            Text('1 check-in por dia · Rede ACAF Connect', style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
+            Text('1 check-in por dia · Rede Connect', style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
             const SizedBox(height: 4),
             Text(
               'Modalidades conforme configuração de cada unidade visitada.',

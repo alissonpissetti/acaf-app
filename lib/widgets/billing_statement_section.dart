@@ -233,7 +233,7 @@ class _BillingStatementRow extends StatelessWidget {
         );
       case BillingEntryKind.connectSubscription:
         return _StatementLines(
-          title: parts.isNotEmpty ? parts.first : 'Mensalidade ACAF Connect',
+          title: parts.isNotEmpty ? parts.first : 'Mensalidade',
           subtitle: 'Cobrança mensal no cartão',
         );
     }

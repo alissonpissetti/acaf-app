@@ -27,7 +27,7 @@ class SubscriptionPlan {
   final String description;
   final List<String> benefits;
 
-  /// Mesmo tier do plano ACAF Connect (`connect-start`, `connect-plus`, …).
+  /// Mesmo tier do plano app (`connect-start`, `connect-plus`, …).
   final String? connectPlanId;
 
   /// Modalidades liberadas neste plano (configuração da unidade no painel da academia).

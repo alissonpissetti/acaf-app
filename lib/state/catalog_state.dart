@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../data/catalog_repository.dart';
 
-/// Estado global do catálogo de academias (fonte: acaf-api).
+/// Estado global do catálogo de academias (fonte: connect-api).
 class CatalogState extends ChangeNotifier {
   CatalogState({CatalogRepository? repository}) : _repository = repository ?? CatalogRepository();
 

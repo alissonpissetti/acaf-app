@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/daily_pass_offer.dart';
 import '../models/gym.dart';
-import '../services/acaf_api.dart';
+import '../services/connect_api.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/connect_primary_button.dart';
@@ -65,7 +65,7 @@ class _DailyPassScreenState extends State<DailyPassScreen> {
   }
 
   Future<void> _loadOffers() async {
-    final response = await AcafApi().fetchDailyPassOffers(
+    final response = await ConnectApi().fetchDailyPassOffers(
       unitId: gym.id,
       date: _todayIso(),
     );
@@ -351,7 +351,7 @@ class _HowItWorksSteps extends StatelessWidget {
     const steps = [
       _StepData('1', 'Escolha a oferta', 'Integral ou faixa com horário e modalidades.'),
       _StepData('2', 'Pagamento', 'PIX, cartão salvo, novo cartão ou Apple Pay.'),
-      _StepData('3', 'QR code', 'Libera na hora na sua carteira ACAF Connect.'),
+      _StepData('3', 'QR code', 'Libera na hora na sua carteira.'),
       _StepData('4', 'Check-in', 'Mostre o código na recepção dentro da janela válida.'),
     ];
 

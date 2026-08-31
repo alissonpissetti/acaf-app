@@ -40,9 +40,9 @@
 		</dict>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>O ACAF Connect usa sua localização para confirmar que você está na academia ao fazer check-in.</string>
+	<string>O aplicativo usa sua localização para confirmar que você está na academia ao fazer check-in.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>O ACAF Connect usa sua localização para confirmar que você está na academia ao fazer check-in.</string>
+	<string>O aplicativo usa sua localização para confirmar que você está na academia ao fazer check-in.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -27,7 +27,7 @@ class BrandLogo extends StatelessWidget {
             fit: BoxFit.contain,
             alignment: Alignment.centerLeft,
             filterQuality: FilterQuality.high,
-            semanticLabel: 'ACAF Connect',
+            semanticLabel: 'Connect',
             gaplessPlayback: true,
             isAntiAlias: true,
           ),

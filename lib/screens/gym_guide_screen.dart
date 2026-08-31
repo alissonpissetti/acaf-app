@@ -19,7 +19,7 @@ import 'financial_screen.dart';
 import 'gym_network_screen.dart';
 import 'member_check_in_screen.dart';
 
-/// Tela inicial: associados ACAF ordenados por distância.
+/// Tela inicial: associados ordenados por distância.
 class HomeAssociatesScreen extends StatefulWidget {
   const HomeAssociatesScreen({super.key});
 

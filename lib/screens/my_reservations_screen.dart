@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/modality_schedule.dart';
-import '../services/acaf_api.dart';
+import '../services/connect_api.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -22,7 +22,7 @@ class MyReservationsScreen extends StatefulWidget {
 }
 
 class _MyReservationsScreenState extends State<MyReservationsScreen> {
-  final _api = AcafApi();
+  final _api = ConnectApi();
   List<ModalityReservation> _reservations = const [];
   bool _loading = true;
   String? _cancellingId;

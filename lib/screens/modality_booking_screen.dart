@@ -5,7 +5,7 @@ import '../data/modality_booking_access.dart';
 import '../models/gym.dart';
 import '../models/modality_schedule.dart';
 import '../navigation/open_connect_plan_tab.dart';
-import '../services/acaf_api.dart';
+import '../services/connect_api.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -30,7 +30,7 @@ class ModalityBookingScreen extends StatefulWidget {
 }
 
 class _ModalityBookingScreenState extends State<ModalityBookingScreen> {
-  final _api = AcafApi();
+  final _api = ConnectApi();
   late DateTime _selectedDay;
   List<ModalityAvailabilitySlot> _slots = const [];
   bool _loading = true;

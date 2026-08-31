@@ -78,7 +78,7 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
                   icon: Icons.business_center_rounded,
                   title: 'Benefício corporativo',
                   body:
-                      'Sua empresa liberou o ACAF Connect. '
+                      'Sua empresa liberou o benefício. '
                       'Use o código de adesão compartilhado pelo RH para vincular sua empresa.',
                 ),
                 const SizedBox(height: AppSpacing.block),
@@ -86,7 +86,7 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
                   icon: Icons.vpn_key_rounded,
                   title: 'Código de adesão',
                   body:
-                      'É um código único da empresa (ex.: ACAF-2026). '
+                      'É um código único da empresa (ex.: TAGSA). '
                       'Sem ele, não é possível escolher o plano corporativo.',
                 ),
                 const SizedBox(height: AppSpacing.section),
@@ -110,7 +110,7 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
                   textCapitalization: TextCapitalization.characters,
                   autocorrect: false,
                   decoration: const InputDecoration(
-                    hintText: 'Ex.: ACAF-2026',
+                    hintText: 'Ex.: TAGSA',
                     prefixIcon: Icon(Icons.tag_rounded),
                   ),
                 ),

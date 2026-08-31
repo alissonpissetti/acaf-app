@@ -43,7 +43,7 @@ class _MyPlanContent extends StatelessWidget {
       children: [
         const ConnectPageHeader(
           title: 'Minha conta',
-          subtitle: 'Escolha seu tier ACAF Connect. Cada academia define as modalidades de cada plano.',
+          subtitle: 'Escolha seu tier Connect. Cada academia define as modalidades de cada plano.',
         ),
         Expanded(
           child: ListView(
@@ -213,7 +213,7 @@ class _ActiveConnectPlanCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Plano ACAF Connect ativo',
+                    'Plano app ativo',
                     style: AppTypography.cardTitle.copyWith(fontSize: 14),
                   ),
                 ),
@@ -266,7 +266,7 @@ class _ConnectPlanRulesBanner extends StatelessWidget {
           const SizedBox(height: 6),
           const _RuleRow(
             icon: Icons.hub_rounded,
-            text: 'Acesso aos associados ACAF Connect em todo o Brasil',
+            text: 'Acesso aos associados em todo o Brasil',
           ),
         ],
       ),

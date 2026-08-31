@@ -9,7 +9,7 @@ import '../models/connect_product_plan.dart';
 import '../models/daily_pass_offer.dart';
 import '../models/gym.dart';
 import '../services/check_in_location.dart';
-import '../services/acaf_api.dart';
+import '../services/connect_api.dart';
 import '../models/primary_gym.dart';
 import '../models/user_account.dart';
 import 'app_state_persistence.dart';
@@ -160,7 +160,7 @@ class AppState extends ChangeNotifier {
 
   /// Valida código de adesão da empresa via API. Retorna mensagem de erro ou null se OK.
   Future<String?> redeemEnrollmentCode(String code, {String? collaboratorName}) async {
-    final result = await AcafApi().validateEnrollmentCode(code);
+    final result = await ConnectApi().validateEnrollmentCode(code);
     if (!result.ok) {
       return result.errorMessage ??
           'Código inválido ou expirado. Verifique com o RH da sua empresa.';
@@ -233,7 +233,7 @@ class AppState extends ChangeNotifier {
       persist: false,
     );
 
-    await AcafApi().registerConnectSubscription(
+    await ConnectApi().registerConnectSubscription(
       holderName: _defaultHolderName(),
       connectPlanId: planId,
       companyName: _companyEnrollment?.companyName,
@@ -400,7 +400,7 @@ class AppState extends ChangeNotifier {
   /// Motivo pelo qual não dá para trocar/definir principal (null = pode confirmar).
   String? primaryGymChangeBlockReason({required String gymId}) {
     if (_activeConnectSubscription == null) {
-      return 'Ative um plano ACAF Connect em Minha conta antes de escolher sua academia principal.';
+      return 'Ative um plano app em Minha conta antes de escolher sua academia principal.';
     }
 
     final current = _primaryGym;
@@ -422,7 +422,7 @@ class AppState extends ChangeNotifier {
     final block = primaryGymChangeBlockReason(gymId: gymId);
     if (block != null) return block;
 
-    final result = await AcafApi().setConnectPrimaryGym(
+    final result = await ConnectApi().setConnectPrimaryGym(
       holderName: _defaultHolderName(),
       unitId: gymId,
     );
@@ -464,7 +464,7 @@ class AppState extends ChangeNotifier {
     final holder = _sessionHolderName();
     if (holder.trim().isEmpty) return;
 
-    final profile = await AcafApi().fetchConnectMember(holder);
+    final profile = await ConnectApi().fetchConnectMember(holder);
     if (profile != null && profile.active) {
       final plan = connectPlanById(profile.connectPlanId);
       final previous = _activeConnectSubscription;
@@ -536,7 +536,7 @@ class AppState extends ChangeNotifier {
     final associates = _associates;
     if (associates == null) return;
 
-    final passes = await AcafApi().fetchActiveDailyPasses(holderName);
+    final passes = await ConnectApi().fetchActiveDailyPasses(holderName);
     final subscriptions = _wallet.where((w) => w.type == PurchaseType.subscription).toList();
     final dailyItems = <WalletItem>[];
 
@@ -608,7 +608,7 @@ class AppState extends ChangeNotifier {
     if (_savedCards.isNotEmpty && _savedCards.first.holderName.trim().isNotEmpty) {
       return _savedCards.first.holderName.trim();
     }
-    return 'Associado ACAF Connect';
+    return 'Associado';
   }
 
   static String connectCheckInCodeForUnit(String unitId) {
@@ -649,7 +649,7 @@ class AppState extends ChangeNotifier {
             'O check-in só funciona dentro de ${CheckInLocationService.maxRadiusKm} km da unidade principal.';
       }
 
-      final result = await AcafApi().requestGeoCheckIn(
+      final result = await ConnectApi().requestGeoCheckIn(
         unitId: gym.id,
         code: code,
         holderName: name,
@@ -692,10 +692,10 @@ class AppState extends ChangeNotifier {
       return true;
     }
 
-    final code = 'ACAF-${now.millisecondsSinceEpoch.toRadixString(36).toUpperCase()}-${gym.id.toUpperCase()}';
+    final code = 'PASS-${now.millisecondsSinceEpoch.toRadixString(36).toUpperCase()}-${gym.id.toUpperCase()}';
     final validUntil = DateTime(now.year, now.month, now.day, 23, 59);
     final holderName = _dailyPassHolderName();
-    final issued = await AcafApi().issueDailyPassCode(
+    final issued = await ConnectApi().issueDailyPassCode(
       code: code,
       unitId: gym.id,
       holderName: holderName,
@@ -738,6 +738,6 @@ class AppState extends ChangeNotifier {
         enrollment!.collaboratorLabel!.trim().isNotEmpty) {
       return enrollment.collaboratorLabel!.trim();
     }
-    return 'Colaborador ACAF';
+    return 'Colaborador';
   }
 }

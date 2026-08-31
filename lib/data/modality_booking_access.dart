@@ -140,7 +140,7 @@ ModalityBookingAccess evaluateModalityBookingAccess({
     return ModalityBookingAccess(
       kind: ModalityBookingAccessKind.denied,
       reason:
-          'Para reservar aulas, compre uma diária nesta unidade ou ative um plano ACAF Connect em Minha conta.',
+          'Para reservar aulas, compre uma diária nesta unidade ou ative um plano app em Minha conta.',
     );
   }
 

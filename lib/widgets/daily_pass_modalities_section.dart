@@ -28,7 +28,7 @@ class DailyPassModalitiesSection extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Configuradas e permitidas nesta unidade para visitantes com diária. '
-            'Não inclui benefícios do plano ACAF Connect.',
+            'Não inclui benefícios do plano app.',
             style: AppTypography.bodyMuted.copyWith(fontSize: 13),
           ),
           const SizedBox(height: AppSpacing.item),

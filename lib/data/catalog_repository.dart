@@ -6,12 +6,12 @@ import '../config/api_config.dart';
 import '../data/unit_subscription_plans.dart';
 import '../models/gym.dart';
 import '../models/gym_network.dart';
-import '../services/acaf_api.dart';
+import '../services/connect_api.dart';
 
 class CatalogRepository {
-  CatalogRepository({AcafApi? api}) : _api = api ?? AcafApi();
+  CatalogRepository({ConnectApi? api}) : _api = api ?? ConnectApi();
 
-  final AcafApi _api;
+  final ConnectApi _api;
 
   List<Gym> _gyms = [];
   List<GymNetwork> _networks = [];

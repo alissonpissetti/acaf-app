@@ -136,7 +136,7 @@ class _ProfileSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = enrollment?.collaboratorLabel ?? 'Colaborador ACAF Connect';
+    final label = enrollment?.collaboratorLabel ?? 'Colaborador';
     final company = enrollment?.companyName ?? 'Empresa não vinculada';
     final code = enrollment?.code;
 
@@ -231,7 +231,7 @@ class _SubscribedPlanSection extends StatelessWidget {
     if (connect == null && gymSub == null && pendingPlanId == null) {
       return AccountEmptyPanel(
         icon: Icons.workspace_premium_outlined,
-        message: 'Nenhum plano ativo. Escolha um plano ACAF Connect em Minha conta.',
+        message: 'Nenhum plano ativo. Escolha um plano app em Minha conta.',
         actionLabel: 'Ir para Minha conta',
         onAction: () {
           context.read<AppState>().openPlanTab();
@@ -254,7 +254,7 @@ class _SubscribedPlanSection extends StatelessWidget {
                       const Icon(Icons.hub_rounded, color: AppColors.orange, size: 22),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('ACAF Connect', style: AppTypography.cardTitle.copyWith(fontSize: 14)),
+                        child: Text('Connect', style: AppTypography.cardTitle.copyWith(fontSize: 14)),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

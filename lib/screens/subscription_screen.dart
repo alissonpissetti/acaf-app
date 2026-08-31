@@ -222,10 +222,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Upgrade ACAF Connect'),
+        title: const Text('Upgrade de plano'),
         content: Text(
           'O $planName nesta unidade libera mais modalidades, '
-          'mas você precisa subir o tier da sua assinatura ACAF Connect em Minha conta.',
+          'mas você precisa subir o tier da sua assinatura Connect em Minha conta.',
         ),
         actions: [
           TextButton(
@@ -303,7 +303,7 @@ class _NoEligibleBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = !hasConnect
-        ? 'Ative um plano ACAF Connect em Minha conta para assinar nesta unidade.'
+        ? 'Ative um plano app em Minha conta para assinar nesta unidade.'
         : emptyUnit
             ? 'Esta unidade ainda não publicou planos mensais.'
             : 'Não há planos nesta unidade compatíveis com ${connectPlanName ?? 'seu plano'}.';

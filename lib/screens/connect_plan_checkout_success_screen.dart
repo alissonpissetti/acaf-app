@@ -245,7 +245,7 @@ class _SuccessHero extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Sua assinatura ACAF Connect está ativa. '
+          'Sua assinatura Connect está ativa. '
           'Você já pode usar a rede conforme o plano escolhido.',
           textAlign: TextAlign.center,
           style: AppTypography.bodyMuted,
