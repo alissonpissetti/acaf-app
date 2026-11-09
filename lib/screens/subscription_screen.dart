@@ -225,7 +225,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         title: const Text('Upgrade de plano'),
         content: Text(
           'O $planName nesta unidade libera mais modalidades, '
-          'mas você precisa subir o tier da sua assinatura Connect em Minha conta.',
+          'mas você precisa subir o tier da sua assinatura em Minha conta.',
         ),
         actions: [
           TextButton(

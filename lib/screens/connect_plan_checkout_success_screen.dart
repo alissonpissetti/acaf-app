@@ -245,7 +245,7 @@ class _SuccessHero extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Sua assinatura Connect está ativa. '
+          'Sua assinatura está ativa. '
           'Você já pode usar a rede conforme o plano escolhido.',
           textAlign: TextAlign.center,
           style: AppTypography.bodyMuted,

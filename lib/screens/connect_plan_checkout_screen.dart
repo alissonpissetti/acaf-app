@@ -276,7 +276,7 @@ class _PlanSummaryCard extends StatelessWidget {
               style: AppTypography.caption.copyWith(fontWeight: FontWeight.w700, color: AppColors.orange),
             ),
             const SizedBox(height: 8),
-            Text('1 check-in por dia · Rede Connect', style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
+            Text('1 check-in por dia · Rede de academias', style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
             const SizedBox(height: 4),
             Text(
               'Modalidades conforme configuração de cada unidade visitada.',

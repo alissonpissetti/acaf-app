@@ -1,11 +1,11 @@
 {
-    "name": "acaf",
-    "short_name": "acaf",
+    "name": "movly.",
+    "short_name": "movly.",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#8254E4",
+    "theme_color": "#8254E4",
+    "description": "movly. — bem-estar para empresas e colaboradores.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

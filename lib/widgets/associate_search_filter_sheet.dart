@@ -396,7 +396,7 @@ class HomeSearchFilterBar extends StatelessWidget {
 
   String get _searchSummary {
     if (filters.query.trim().isNotEmpty) return filters.query.trim();
-    return 'Busque por qualquer coisa';
+    return 'Buscar academia ou modalidade';
   }
 
   int get _nonQueryFilterCount {

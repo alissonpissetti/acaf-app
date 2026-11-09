@@ -87,7 +87,7 @@ class LocationState extends ChangeNotifier {
       _catalog.repository.applyDistancesFrom(position.latitude, position.longitude);
       _currentLocationLabel = 'Perto de você';
     } catch (e) {
-      debugPrint('Connect: falha ao obter localização: $e');
+      debugPrint('App: falha ao obter localização: $e');
       _currentLocationLabel = 'Curitiba, PR';
     }
 

@@ -11,7 +11,7 @@ import '../theme/app_typography.dart';
 import '../widgets/account_empty_panel.dart';
 import '../widgets/billing_statement_section.dart';
 import '../widgets/connect_bottom_nav.dart';
-import '../widgets/connect_page_header.dart';
+import '../widgets/movly_tab_header.dart';
 import '../widgets/connect_primary_button.dart';
 import '../widgets/saved_payment_cards_section.dart';
 import 'connect_plan_checkout_screen.dart';
@@ -34,7 +34,7 @@ class UserAccountScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const ConnectPageHeader(
+          const MovlyTabHeader(
             title: 'Minha conta',
             subtitle: 'Carteira, cartões, extrato e plano aderido.',
             trailing: _AccountHeaderClose(),
@@ -254,7 +254,7 @@ class _SubscribedPlanSection extends StatelessWidget {
                       const Icon(Icons.hub_rounded, color: AppColors.orange, size: 22),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Connect', style: AppTypography.cardTitle.copyWith(fontSize: 14)),
+                        child: Text('Assinatura', style: AppTypography.cardTitle.copyWith(fontSize: 14)),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

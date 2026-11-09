@@ -18,7 +18,7 @@ class ConnectProductPlan {
   final int tierIndex;
 
   /// Ex.: "Start", "Plus" (sem prefixo da marca).
-  String get tierShortName => name.replaceFirst('Connect ', '');
+  String get tierShortName => name.replaceFirst(RegExp(r'^Connect\s+'), '').trim();
 }
 
 /// Assinatura mensal Connect ativa (cartão cadastrado).

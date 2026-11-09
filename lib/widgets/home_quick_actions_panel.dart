@@ -17,7 +17,7 @@ class HomeQuickAction {
   final VoidCallback onTap;
 }
 
-/// Atalhos no topo da home para quem tem plano/assinatura ativa.
+/// Atalhos horizontais para assinantes — leitura rápida e toque confortável.
 class HomeQuickActionsPanel extends StatelessWidget {
   const HomeQuickActionsPanel({
     super.key,
@@ -33,32 +33,34 @@ class HomeQuickActionsPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Acesso rápido', style: AppTypography.sectionTitle),
-        if (homeGymName != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Sua unidade: $homeGymName',
-            style: AppTypography.bodyMuted,
+        Row(
+          children: [
+            Expanded(
+              child: Text('Seu dia', style: AppTypography.sectionTitle),
+            ),
+            if (homeGymName != null)
+              Flexible(
+                child: Text(
+                  homeGymName!,
+                  style: AppTypography.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 108,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: actions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              return _QuickActionTile(action: actions[index]);
+            },
           ),
-        ],
-        const SizedBox(height: AppSpacing.item),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            const spacing = 10.0;
-            final tileWidth = (constraints.maxWidth - spacing) / 2;
-            return Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: actions
-                  .map(
-                    (action) => SizedBox(
-                      width: tileWidth,
-                      child: _QuickActionTile(action: action),
-                    ),
-                  )
-                  .toList(),
-            );
-          },
         ),
       ],
     );
@@ -74,53 +76,37 @@ class _QuickActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: action.onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
+          width: 112,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border),
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.orangeSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(action.icon, size: 22, color: AppColors.orange),
+          padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.limeSoft,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        action.label,
-                        style: AppTypography.cardTitle.copyWith(fontSize: 14),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (action.subtitle != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          action.subtitle!,
-                          style: AppTypography.caption,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                child: Icon(action.icon, size: 22, color: AppColors.onLime),
+              ),
+              const Spacer(),
+              Text(
+                action.label,
+                style: AppTypography.cardTitle.copyWith(fontSize: 13),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),

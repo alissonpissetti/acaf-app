@@ -2,19 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Connect (apresentação — profile)",
+      "name": "App (apresentação — profile)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "profile"
     },
     {
-      "name": "Connect (release)",
+      "name": "App (release)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "release"
     },
     {
-      "name": "Connect (debug)",
+      "name": "App (debug)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug"

@@ -41,10 +41,10 @@ class ConnectLocationField extends StatelessWidget {
                   const SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.orange),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onLime),
                   )
                 else
-                  const Icon(Icons.location_on_outlined, size: 22, color: AppColors.orange),
+                  const Icon(Icons.location_on_outlined, size: 22, color: AppColors.onLime),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(

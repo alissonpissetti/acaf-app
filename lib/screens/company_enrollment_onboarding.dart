@@ -5,7 +5,7 @@ import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/connect_bottom_nav.dart';
-import '../widgets/connect_page_header.dart';
+import '../widgets/movly_tab_header.dart';
 import '../widgets/connect_primary_button.dart';
 
 /// Onboarding: colaborador informa o código de adesão da empresa.
@@ -63,9 +63,9 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const ConnectPageHeader(
-          title: 'Minha conta',
-          subtitle: 'Cadastre-se com o código de adesão da sua empresa.',
+        const MovlyTabHeader(
+          title: 'Começar',
+          subtitle: 'Use o código que sua empresa enviou para liberar o benefício.',
         ),
         Expanded(
           child: ListView(

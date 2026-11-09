@@ -11,7 +11,7 @@ import 'connect_plan_checkout_screen.dart';
 import 'daily_pass_qr_screen.dart';
 import 'user_account_screen.dart';
 import '../widgets/connect_bottom_nav.dart';
-import '../widgets/connect_page_header.dart';
+import '../widgets/movly_tab_header.dart';
 import '../widgets/connect_primary_button.dart';
 
 class MyPlanScreen extends StatelessWidget {
@@ -41,9 +41,9 @@ class _MyPlanContent extends StatelessWidget {
 
     return Column(
       children: [
-        const ConnectPageHeader(
+        const MovlyTabHeader(
           title: 'Minha conta',
-          subtitle: 'Escolha seu tier Connect. Cada academia define as modalidades de cada plano.',
+          subtitle: 'Seu benefício, plano e pagamentos em um só lugar.',
         ),
         Expanded(
           child: ListView(

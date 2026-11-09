@@ -6,15 +6,15 @@ import 'app_typography.dart';
 
 abstract final class AppTheme {
   static ThemeData light() {
-    final base = GoogleFonts.interTextTheme();
+    final base = GoogleFonts.figtreeTextTheme();
 
     const scheme = ColorScheme(
       brightness: Brightness.light,
-      primary: AppColors.orange,
-      onPrimary: Colors.white,
-      secondary: AppColors.orangeDark,
-      onSecondary: Colors.white,
-      tertiary: AppColors.foreground,
+      primary: AppColors.primary,
+      onPrimary: AppColors.onPrimary,
+      secondary: AppColors.lime,
+      onSecondary: AppColors.onLime,
+      tertiary: AppColors.movlyPeriwinkle,
       onTertiary: Colors.white,
       error: AppColors.error,
       onError: Colors.white,
@@ -25,8 +25,8 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: AppColors.surface,
-      progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.orange),
+      scaffoldBackgroundColor: AppColors.surfaceMuted,
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.primary),
       textTheme: base.copyWith(
         headlineMedium: AppTypography.pageTitle,
         titleLarge: AppTypography.sectionTitle,
@@ -35,7 +35,7 @@ abstract final class AppTheme {
         bodyLarge: AppTypography.body,
         bodyMedium: AppTypography.bodyMuted,
         bodySmall: AppTypography.caption,
-        labelLarge: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+        labelLarge: GoogleFonts.figtree(fontSize: 15, fontWeight: FontWeight.w600),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surface,
@@ -43,7 +43,7 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.figtree(
           fontSize: 17,
           fontWeight: FontWeight.w600,
           color: AppColors.foreground,
@@ -56,7 +56,7 @@ abstract final class AppTheme {
         color: AppColors.card,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: AppColors.border),
         ),
         margin: EdgeInsets.zero,
@@ -68,29 +68,29 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.orange,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
           disabledBackgroundColor: AppColors.border,
           disabledForegroundColor: AppColors.textMuted,
           elevation: 0,
           minimumSize: const Size.fromHeight(52),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+          textStyle: GoogleFonts.figtree(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.orange,
+          foregroundColor: AppColors.primary,
           minimumSize: const Size.fromHeight(52),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          side: const BorderSide(color: AppColors.orange, width: 1),
+          side: const BorderSide(color: AppColors.primary, width: 1),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+          textStyle: GoogleFonts.figtree(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: AppColors.orange),
+        style: TextButton.styleFrom(foregroundColor: AppColors.primary),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -99,14 +99,14 @@ abstract final class AppTheme {
         hintStyle: AppTypography.bodyMuted,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         floatingLabelAlignment: FloatingLabelAlignment.start,
-        floatingLabelStyle: GoogleFonts.inter(
+        floatingLabelStyle: GoogleFonts.figtree(
           fontSize: 12,
           fontWeight: FontWeight.w500,
           height: 1,
           color: AppColors.textMuted,
           backgroundColor: AppColors.surface,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: GoogleFonts.figtree(
           fontSize: 15,
           fontWeight: FontWeight.w400,
           color: AppColors.textMuted,
@@ -116,13 +116,13 @@ abstract final class AppTheme {
         enabledBorder: _inputOutlineBorder(AppColors.border),
         disabledBorder: _inputOutlineBorder(AppColors.border),
         errorBorder: _inputOutlineBorder(AppColors.error),
-        focusedBorder: _inputOutlineBorder(AppColors.orange),
+        focusedBorder: _inputOutlineBorder(AppColors.primary),
         focusedErrorBorder: _inputOutlineBorder(AppColors.error),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceMuted,
-        selectedColor: AppColors.orange,
-        labelStyle: AppTypography.caption.copyWith(color: AppColors.foreground),
+        selectedColor: AppColors.lime,
+        labelStyle: AppTypography.caption.copyWith(color: AppColors.onLime),
         padding: const EdgeInsets.symmetric(horizontal: 4),
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -130,28 +130,32 @@ abstract final class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 64,
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.orangeSoft,
+        backgroundColor: AppColors.lime,
+        indicatorColor: AppColors.onLime.withValues(alpha: 0.14),
         overlayColor: WidgetStateProperty.all(Colors.transparent),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return GoogleFonts.inter(
+          return GoogleFonts.figtree(
             fontSize: 11,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            color: selected ? AppColors.orange : AppColors.textMuted,
+            color: selected
+                ? AppColors.onLime
+                : AppColors.onLime.withValues(alpha: 0.72),
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
             size: 22,
-            color: selected ? AppColors.orange : AppColors.textMuted,
+            color: selected
+                ? AppColors.onLime
+                : AppColors.onLime.withValues(alpha: 0.72),
           );
         }),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.orange;
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
           return Colors.transparent;
         }),
         checkColor: WidgetStateProperty.all(Colors.white),

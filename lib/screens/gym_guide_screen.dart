@@ -7,17 +7,20 @@ import '../models/associate_search_filters.dart';
 import '../models/gym.dart';
 import '../state/app_state.dart';
 import '../state/location_state.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/connect_bottom_nav.dart';
-import '../widgets/connect_page_header.dart';
 import '../widgets/gym_card.dart';
 import '../widgets/gym_card_skeleton.dart';
-import '../widgets/home_location_search_block.dart';
 import '../widgets/home_quick_actions_panel.dart';
+import '../widgets/movly_discover_card.dart';
+import '../widgets/movly_empty_state.dart';
+import '../widgets/movly_home_header.dart';
 import '../widgets/section_header.dart';
 import 'financial_screen.dart';
 import 'gym_network_screen.dart';
 import 'member_check_in_screen.dart';
+import 'user_account_screen.dart';
 
 /// Tela inicial: associados ordenados por distância.
 class HomeAssociatesScreen extends StatefulWidget {
@@ -77,6 +80,16 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
     });
   }
 
+  Future<void> _onRefresh() async {
+    final location = context.read<LocationState>();
+    if (location.usingCurrentLocation) {
+      await location.useCurrentLocation();
+    } else {
+      location.refreshDistancesFromCache();
+    }
+    setState(_resetPagination);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -134,15 +147,6 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
     );
   }
 
-  void _openProfilePlaceholder() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Perfil e documentos do colaborador em breve.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final location = context.watch<LocationState>();
@@ -157,127 +161,121 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
     final isMember = appState.activeConnectSubscription != null;
     final primaryGym = _primaryGym(appState);
 
-    return ListView(
-      controller: _scrollController,
-      padding: EdgeInsets.only(bottom: ConnectBottomNav.scrollBottomPadding(context)),
-      children: [
-        const ConnectPageHeader(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.pageX, 8, AppSpacing.pageX, 0),
-          child: HomeLocationSearchBlock(
-            filters: _filters,
-            onFiltersChanged: (value) => setState(() {
-              _filters = value;
-              _resetPagination();
-            }),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.section),
-        if (isMember) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageX),
-            child: HomeQuickActionsPanel(
-              homeGymName: primaryGym?.name ?? appState.primaryGymName,
-              actions: [
-                HomeQuickAction(
-                  icon: Icons.qr_code_scanner_rounded,
-                  label: 'Check-in',
-                  subtitle: primaryGym?.name ?? 'Na sua unidade',
-                  onTap: () => _openCheckIn(appState),
-                ),
-                HomeQuickAction(
-                  icon: Icons.swap_horiz_rounded,
-                  label: 'Alterar plano',
-                  onTap: () => appState.openPlanTab(),
-                ),
-                HomeQuickAction(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Meus dados',
-                  onTap: _openProfilePlaceholder,
-                ),
-                HomeQuickAction(
-                  icon: Icons.receipt_long_outlined,
-                  label: 'Financeiro',
-                  onTap: () => FinancialScreen.open(context),
-                ),
-              ],
+    final listTitle = location.loading
+        ? 'Buscando unidades…'
+        : allAssociates.isEmpty
+            ? 'Nenhum resultado'
+            : '${allAssociates.length} unidades perto de você';
+
+    return RefreshIndicator(
+      color: AppColors.onLime,
+      onRefresh: _onRefresh,
+      child: ListView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(bottom: ConnectBottomNav.scrollBottomPadding(context)),
+        children: [
+          const MovlyHomeHeader(),
+          Transform.translate(
+            offset: const Offset(0, -18),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageX),
+              child: MovlyDiscoverCard(
+                filters: _filters,
+                onFiltersChanged: (value) => setState(() {
+                  _filters = value;
+                  _resetPagination();
+                }),
+              ),
             ),
           ),
-          const SizedBox(height: AppSpacing.section),
-        ],
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageX),
-          child: SectionHeader(
-            title: location.loading
-                ? 'Carregando...'
-                : 'Exibindo unidades próximas à você',
-            actionLabel: _hasActiveFilters ? 'Limpar' : null,
-            onAction: _hasActiveFilters ? _clearAllFilters : null,
+          const SizedBox(height: 8),
+          if (isMember) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageX),
+              child: HomeQuickActionsPanel(
+                homeGymName: primaryGym?.name ?? appState.primaryGymName,
+                actions: [
+                  HomeQuickAction(
+                    icon: Icons.qr_code_scanner_rounded,
+                    label: 'Check-in',
+                    onTap: () => _openCheckIn(appState),
+                  ),
+                  HomeQuickAction(
+                    icon: Icons.wallet_outlined,
+                    label: 'Plano',
+                    onTap: () => appState.openPlanTab(),
+                  ),
+                  HomeQuickAction(
+                    icon: Icons.person_outline_rounded,
+                    label: 'Perfil',
+                    onTap: () => UserAccountScreen.open(context),
+                  ),
+                  HomeQuickAction(
+                    icon: Icons.receipt_long_outlined,
+                    label: 'Financeiro',
+                    onTap: () => FinancialScreen.open(context),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.section),
+          ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageX),
+            child: SectionHeader(
+              title: listTitle,
+              subtitle: location.loading ? null : 'Ordenadas pela distância da sua região',
+              actionLabel: _hasActiveFilters ? 'Limpar filtros' : null,
+              onAction: _hasActiveFilters ? _clearAllFilters : null,
+            ),
           ),
-        ),
-        if (!location.loading && allAssociates.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.pageX),
-            child: _EmptyResults(),
-          )
-        else if (location.loading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          )
-        else
-          ...associates.asMap().entries.map(
-            (entry) {
-              final associate = entry.value;
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.pageX,
-                  0,
-                  AppSpacing.pageX,
-                  AppSpacing.block,
-                ),
-                child: GymCard(
-                  gym: associate,
-                  network: _repository!.networkForUnit(associate),
-                  distanceRank: entry.key + 1,
-                  cardContext: GymCardContext.homeUnitIndex,
-                  networkUnitCount: _repository!.networkUnitCount(associate.networkId),
-                  onTap: () => _openNetwork(associate),
-                ),
-              );
-            },
-          ),
-        if (_loadingMore && hasMore)
-          const Padding(
-            padding: EdgeInsets.fromLTRB(AppSpacing.pageX, 0, AppSpacing.pageX, AppSpacing.block),
-            child: GymCardSkeleton(),
-          ),
-        if (_loadingMore && hasMore)
-          const Padding(
-            padding: EdgeInsets.fromLTRB(AppSpacing.pageX, 0, AppSpacing.pageX, AppSpacing.block),
-            child: GymCardSkeleton(),
-          ),
-      ],
-    );
-  }
-}
-
-class _EmptyResults extends StatelessWidget {
-  const _EmptyResults();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        children: [
-          Text('Nenhuma unidade encontrada', style: AppTypography.sectionTitle),
-          const SizedBox(height: AppSpacing.tight),
-          Text(
-            'Troque a região ou ajuste busca e filtros.',
-            style: AppTypography.bodyMuted,
-            textAlign: TextAlign.center,
-          ),
+          if (!location.loading && allAssociates.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageX),
+              child: MovlyEmptyState(
+                title: 'Nada por aqui ainda',
+                message: 'Tente outra cidade ou remova alguns filtros para ver academias disponíveis.',
+                actionLabel: _hasActiveFilters ? 'Limpar filtros' : 'Trocar região',
+                onAction: _hasActiveFilters
+                    ? _clearAllFilters
+                    : () => _onRefresh(),
+              ),
+            )
+          else if (location.loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onLime),
+              ),
+            )
+          else
+            ...associates.asMap().entries.map(
+              (entry) {
+                final associate = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.pageX,
+                    0,
+                    AppSpacing.pageX,
+                    AppSpacing.block,
+                  ),
+                  child: GymCard(
+                    gym: associate,
+                    network: _repository!.networkForUnit(associate),
+                    distanceRank: entry.key + 1,
+                    cardContext: GymCardContext.homeUnitIndex,
+                    networkUnitCount: _repository!.networkUnitCount(associate.networkId),
+                    onTap: () => _openNetwork(associate),
+                  ),
+                );
+              },
+            ),
+          if (_loadingMore && hasMore)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(AppSpacing.pageX, 0, AppSpacing.pageX, AppSpacing.block),
+              child: GymCardSkeleton(),
+            ),
         ],
       ),
     );

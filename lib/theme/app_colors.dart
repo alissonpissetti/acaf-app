@@ -1,35 +1,72 @@
 import 'package:flutter/material.dart';
 
-/// Paleta base neutra com acento laranja da marca (#E8881C).
+/// Paleta Movly — cliente final (limão + gradiente céu + roxo estrutural).
 abstract final class AppColors {
-  static const foreground = Color(0xFF1C1C1E);
-  static const foregroundSecondary = Color(0xFF3A3A3C);
-  static const textMuted = Color(0xFF8E8E93);
-  static const border = Color(0xFFE5E5EA);
-  static const borderStrong = Color(0xFFD1D1D6);
+  static const movlyLime = Color(0xFFCBF74F);
+  static const movlyPurple = Color(0xFF8254E4);
+  static const movlySky = Color(0xFF89B4E0);
+  static const movlyPeriwinkle = Color(0xFF7579E5);
+  static const movlyPurpleStrong = Color(0xFF6A3FD0);
+  static const movlyPurpleDeep = Color(0xFF2A1B57);
+  static const movlyInk = Color(0xFF17142B);
+
+  static const foreground = movlyInk;
+  static const foregroundSecondary = Color(0xFF4A4660);
+  static const textMuted = Color(0xFF858199);
+  static const border = Color(0xFFEBEAF1);
+  static const borderStrong = Color(0xFFD9D7E3);
 
   static const surface = Colors.white;
-  static const surfaceMuted = Color(0xFFF7F7F8);
+  static const surfaceMuted = Color(0xFFF4FAE8);
+  static const surfaceSunken = Color(0xFFEFEEF4);
   static const card = Colors.white;
 
-  /// Cor de destaque (detalhes, ícones ativos, seleção, preços).
-  static const orange = Color(0xFFE8881C);
-  static const orangeDark = Color(0xFFC97416);
-  static const orangeSoft = Color(0x1AE8881C);
+  /// Ação, destaques, barra inferior — energia da marca.
+  static const lime = movlyLime;
+  static const limeSoft = Color(0x33CBF74F);
+  static const onLime = movlyPurpleDeep;
 
-  static const accent = orange;
+  /// Botões principais e firmeza da marca.
+  static const purple = movlyPurple;
+  static const purpleSoft = Color(0x1A8254E4);
+
+  static const accent = lime;
+  static const primary = purple;
+  static const onPrimary = Colors.white;
+
+  /// Compatibilidade com telas legadas (antes: laranja Connect).
+  static const orange = lime;
+  static const orangeDark = movlyPurpleStrong;
+  static const orangeSoft = limeSoft;
 
   static const brandGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [Color(0xFFF0A035), orange],
+    colors: [movlySky, movlyPeriwinkle],
+  );
+
+  static const brandGradientDiagonal = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [movlySky, movlyPeriwinkle, movlyPurple],
+    stops: [0, 0.55, 1],
+  );
+
+  static const heroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF9EC5EA),
+      movlySky,
+      movlyPeriwinkle,
+    ],
   );
 
   static const success = Color(0xFF16A34A);
   static const error = Color(0xFFDC2626);
 
-  static const purple = foreground;
-  static const purpleSoft = foregroundSecondary;
+  static const purpleLegacy = foreground;
+  static const purpleSoftLegacy = foregroundSecondary;
 
   static const headerRadius = Radius.circular(0);
 }

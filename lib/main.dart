@@ -11,6 +11,7 @@ import 'state/app_state.dart';
 import 'state/catalog_state.dart';
 import 'state/location_state.dart';
 import 'state/app_state_persistence.dart';
+import 'branding/movly_brand.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -62,7 +63,7 @@ class AcafApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Connect',
+      title: MovlyBrand.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       home: bootstrapError != null

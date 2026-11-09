@@ -15,8 +15,9 @@ class HomeShell extends StatelessWidget {
     final index = context.select<AppState, int>((s) => s.homeTabIndex);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      extendBody: true,
+      backgroundColor: AppColors.surfaceMuted,
+      extendBody: false,
+      resizeToAvoidBottomInset: true,
       body: IndexedStack(
         index: index,
         children: [

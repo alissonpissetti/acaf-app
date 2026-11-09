@@ -185,7 +185,7 @@ List<String> _benefitsFor(
   return <String>[
     if (scoped.isNotEmpty) 'Modalidades: ${scoped.join(', ')}',
     '1 check-in/dia nesta unidade',
-    'Tier ${connect.tierShortName} · Connect',
+    'Tier ${connect.tierShortName}',
   ];
 }
 
