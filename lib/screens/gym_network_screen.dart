@@ -93,7 +93,7 @@ class _GymNetworkScreenState extends State<GymNetworkScreen> {
               key: ValueKey(gym.id),
               gym: gym,
               network: widget.network,
-              height: GymHeroSliverAppBar.expandedHeightWithPhoto,
+              height: GymHeroSliverAppBar.heroVisualHeight(context, hasHeroPhoto),
               logoHeight: 64,
             ),
           ),
@@ -181,7 +181,7 @@ class _NetworkSummaryStrip extends StatelessWidget {
                   '$unitCount unidade${unitCount == 1 ? '' : 's'} · a partir de R\$ ${minDaily.toStringAsFixed(2)} diária · R\$ ${minPlan.toStringAsFixed(0)}/mês',
                   style: AppTypography.caption.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.orange,
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -216,7 +216,7 @@ class _NetworkUnitPicker extends StatelessWidget {
           final unit = units[index];
           final isSelected = unit.id == selected.id;
           return Material(
-            color: isSelected ? AppColors.orangeSoft : AppColors.surface,
+            color: isSelected ? AppColors.purpleSoft : AppColors.surface,
             borderRadius: BorderRadius.circular(22),
             child: InkWell(
               onTap: () => onSelected(unit),
@@ -226,7 +226,7 @@ class _NetworkUnitPicker extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: isSelected ? AppColors.orange : AppColors.border,
+                    color: isSelected ? AppColors.primary : AppColors.border,
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
@@ -237,7 +237,7 @@ class _NetworkUnitPicker extends StatelessWidget {
                       unit.unitLabel,
                       style: AppTypography.caption.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: isSelected ? AppColors.orange : AppColors.foreground,
+                        color: isSelected ? AppColors.primary : AppColors.foreground,
                       ),
                     ),
                     const SizedBox(width: 6),

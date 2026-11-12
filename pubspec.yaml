@@ -1,5 +1,5 @@
 name: acaf
-description: "App do cliente final (bem-estar e movimento) — marca provisória."
+description: "movly. — app do cliente final (bem-estar e movimento), by ACAF Brasil."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -29,7 +29,8 @@ dependencies:
   shared_preferences: ^2.5.3
   qr_flutter: ^4.1.0
   geolocator: ^14.0.3
-  flutter_svg: ^2.2.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_test:
@@ -47,8 +48,8 @@ flutter_launcher_icons:
   android: true
   ios: true
   # Símbolo (igual ao header interno): fundo branco, marca centralizada.
-  image_path: assets/branding/connect_lockup.png
-  adaptive_icon_background: "#FFFFFF"
+  image_path: assets/branding/app_icon.png
+  adaptive_icon_background: "#CBF74F"
   adaptive_icon_foreground: assets/branding/app_icon_foreground.png
   remove_alpha_ios: true
 

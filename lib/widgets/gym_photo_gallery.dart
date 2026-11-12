@@ -34,35 +34,49 @@ class _GymPhotoGalleryState extends State<GymPhotoGallery> {
     super.dispose();
   }
 
+  Widget _sizedHero(Widget child) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final h = constraints.maxHeight.isFinite && constraints.maxHeight > 0
+            ? constraints.maxHeight
+            : widget.height;
+        return SizedBox(width: double.infinity, height: h, child: child);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final photos = widget.gym.photoAssets;
+    final heroLogoAlignment = GymHeroLogoAlignment.bottomRight;
+
     if (photos.isEmpty) {
-      return SizedBox(
-        height: widget.height,
-        child: GymHeroVisual(
+      return _sizedHero(
+        GymHeroVisual(
           gym: widget.gym,
           network: widget.network,
           overlayLogoHeight: widget.logoHeight,
+          logoAlignment: heroLogoAlignment,
+          photoScrim: PhotoScrim.subtle,
         ),
       );
     }
 
     if (photos.length == 1) {
-      return SizedBox(
-        height: widget.height,
-        child: GymHeroVisual(
+      return _sizedHero(
+        GymHeroVisual(
           gym: widget.gym,
           network: widget.network,
           overlayLogoHeight: widget.logoHeight,
           heroImageOverride: photos.first,
+          logoAlignment: heroLogoAlignment,
+          photoScrim: PhotoScrim.subtle,
         ),
       );
     }
 
-    return SizedBox(
-      height: widget.height,
-      child: Stack(
+    return _sizedHero(
+      Stack(
         fit: StackFit.expand,
         children: [
           PageView.builder(
@@ -76,6 +90,8 @@ class _GymPhotoGalleryState extends State<GymPhotoGallery> {
                 overlayLogoHeight: widget.logoHeight,
                 heroImageOverride: photos[index],
                 showBrandLogo: index == 0,
+                logoAlignment: heroLogoAlignment,
+                photoScrim: PhotoScrim.subtle,
               );
             },
           ),

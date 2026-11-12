@@ -455,12 +455,12 @@ class GymEnrollmentInfoPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.orange),
+          Icon(icon, size: 16, color: AppColors.primary),
           const SizedBox(width: 4),
           Text(
             text,
             style: AppTypography.caption.copyWith(
-              color: AppColors.orange,
+              color: AppColors.foregroundSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),

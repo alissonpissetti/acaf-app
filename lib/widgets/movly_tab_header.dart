@@ -11,17 +11,22 @@ class MovlyTabHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.topSafeArea = true,
   });
 
   final String title;
   final String? subtitle;
   final Widget? trailing;
 
+  /// Desliga quando o bloco de marca acima já aplicou [SafeArea] superior.
+  final bool topSafeArea;
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.surface,
       child: SafeArea(
+        top: topSafeArea,
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.pageX, 8, AppSpacing.pageX, 16),

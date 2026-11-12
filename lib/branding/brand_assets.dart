@@ -1,5 +1,7 @@
 /// Marca movly. — PNG extraídos do manual `movly-by-acaf.app.pdf` (p. 3).
 abstract final class BrandAssets {
+  /// Wordmark **movly.** em `#8254E4` — vetor isolado (sem lockup); preferir PNG em [BrandLogo].
+  static const movlyLogoPurpleSvg = 'assets/branding/movly-logo-purple.svg';
   static const movlyLogoPurpleOnLime = 'assets/branding/movly-logo-purple-on-lime.png';
   static const movlyLogoLimeOnPurple = 'assets/branding/movly-logo-lime-on-purple.png';
   static const movlyLogoLimeOnGradient = 'assets/branding/movly-logo-lime-on-gradient.png';

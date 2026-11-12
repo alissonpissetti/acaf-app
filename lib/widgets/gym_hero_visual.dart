@@ -4,6 +4,18 @@ import '../models/gym.dart';
 import '../models/gym_network.dart';
 import '../theme/app_colors.dart';
 
+enum GymHeroLogoAlignment {
+  topRight,
+  bottomRight,
+}
+
+/// Controle do degradê sobre a foto do hero.
+enum PhotoScrim {
+  full,
+  subtle,
+  none,
+}
+
 /// Hero do card/detalhe: foto da API/unidade ou fallback com cor da rede.
 class GymHeroVisual extends StatelessWidget {
   const GymHeroVisual({
@@ -14,6 +26,8 @@ class GymHeroVisual extends StatelessWidget {
     this.showFallbackIcon = true,
     this.heroImageOverride,
     this.showBrandLogo = true,
+    this.logoAlignment = GymHeroLogoAlignment.topRight,
+    this.photoScrim = PhotoScrim.full,
   });
 
   final Gym gym;
@@ -22,6 +36,9 @@ class GymHeroVisual extends StatelessWidget {
   final bool showFallbackIcon;
   final String? heroImageOverride;
   final bool showBrandLogo;
+  final GymHeroLogoAlignment logoAlignment;
+  /// Controle do degradê sobre a foto (cards usam [PhotoScrim.subtle] ou [PhotoScrim.none]).
+  final PhotoScrim photoScrim;
 
   String? get _logoSource => network?.logoSource ?? gym.brandLogoUrl ?? gym.brandLogoAsset;
 
@@ -54,37 +71,51 @@ class GymHeroVisual extends StatelessWidget {
           _HeroImage(source: imagePath)
         else
           _TintHeroFallback(tint: gym.heroTint),
-        if (hasPhoto)
+        if (hasPhoto && photoScrim != PhotoScrim.none)
           DecoratedBox(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0.0, 0.28, 0.72, 1.0],
-                colors: [
-                  Colors.black.withValues(alpha: 0.55),
-                  Colors.black.withValues(alpha: 0.12),
-                  Colors.black.withValues(alpha: 0.08),
-                  Colors.black.withValues(alpha: 0.62),
-                ],
-              ),
+              gradient: photoScrim == PhotoScrim.subtle
+                  ? LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.85, 1.0],
+                      colors: [
+                        Colors.black.withValues(alpha: 0.08),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.22),
+                      ],
+                    )
+                  : LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.28, 0.72, 1.0],
+                      colors: [
+                        Colors.black.withValues(alpha: 0.55),
+                        Colors.black.withValues(alpha: 0.12),
+                        Colors.black.withValues(alpha: 0.08),
+                        Colors.black.withValues(alpha: 0.62),
+                      ],
+                    ),
             ),
           ),
         if (showBrandLogo && _logoSource != null)
           Positioned(
             right: 10,
-            top: 10,
+            top: logoAlignment == GymHeroLogoAlignment.topRight ? 10 : null,
+            bottom: logoAlignment == GymHeroLogoAlignment.bottomRight ? 10 : null,
             child: _LogoBadge(
               source: _logoSource!,
               width: overlayLogoHeight * _logoWidthFactor,
               height: overlayLogoHeight,
               semanticLabel: 'Logo ${network?.name ?? gym.name}',
-              elevated: !hasPhoto,
+              elevated: true,
             ),
           )
         else if (showFallbackIcon && _logoSource == null)
           Align(
-            alignment: Alignment.bottomRight,
+            alignment: logoAlignment == GymHeroLogoAlignment.bottomRight
+                ? Alignment.bottomRight
+                : Alignment.topRight,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Icon(
@@ -109,20 +140,18 @@ class _TintHeroFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mid = Color.lerp(tint, Colors.black, 0.22)!;
-    final deep = Color.lerp(tint, Colors.black, 0.48)!;
+    final highlight = Color.lerp(tint, Colors.white, 0.16)!;
+    final mid = Color.lerp(tint, Colors.black, 0.18)!;
+    final deep = Color.lerp(tint, AppColors.primary, 0.42)!;
+    final base = Color.lerp(tint, AppColors.primary, 0.58)!;
 
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.lerp(tint, Colors.white, 0.14)!,
-            mid,
-            deep,
-          ],
-          stops: const [0.0, 0.52, 1.0],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [highlight, mid, deep, base],
+          stops: const [0.0, 0.38, 0.78, 1.0],
         ),
       ),
       child: DecoratedBox(
@@ -130,9 +159,11 @@ class _TintHeroFallback extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
+            stops: const [0.0, 0.55, 1.0],
             colors: [
-              Colors.black.withValues(alpha: 0.04),
-              Colors.black.withValues(alpha: 0.55),
+              Colors.transparent,
+              Colors.black.withValues(alpha: 0.06),
+              Colors.black.withValues(alpha: 0.42),
             ],
           ),
         ),

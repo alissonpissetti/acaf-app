@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../data/city_map_centers.dart';
 import '../data/search_areas.dart';
 import '../state/catalog_state.dart';
 
@@ -53,6 +54,28 @@ class LocationState extends ChangeNotifier {
   String? get listCityFilter {
     if (_usingCurrentLocation) return null;
     return _manualArea?.cityMatch ?? 'Curitiba';
+  }
+
+  /// Coordenadas do último fix de GPS (quando disponível).
+  double? get lastLatitude => _lastLatitude;
+
+  double? get lastLongitude => _lastLongitude;
+
+  /// True quando o mapa pode mostrar o pin do usuário com GPS ativo.
+  bool get hasUserMapPosition =>
+      _usingCurrentLocation && _lastLatitude != null && _lastLongitude != null;
+
+  /// Centro do mapa: GPS atual ou cidade selecionada / fallback.
+  (double lat, double lng) get mapCenter {
+    if (hasUserMapPosition) {
+      return (_lastLatitude!, _lastLongitude!);
+    }
+    if (_manualArea != null) {
+      return CityMapCenters.forCity(_manualArea!.cityMatch);
+    }
+    return CityMapCenters.forCity(
+      _usingCurrentLocation ? 'Curitiba' : cityFilter,
+    );
   }
 
   Future<void> resolveNearbyArea() async {

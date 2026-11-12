@@ -4,6 +4,9 @@ import '../models/gym_network.dart';
 import '../state/catalog_state.dart';
 import 'facility_filter_catalog.dart';
 
+/// Retângulo geográfico (graus decimais) para filtro de viewport no mapa.
+typedef GeoBounds = ({double north, double south, double east, double west});
+
 /// Fonte de associados da rede Connect (connect-api).
 class AssociatesRepository {
   static const homePageSize = 10;
@@ -59,8 +62,44 @@ class AssociatesRepository {
     required AssociateSearchFilters filters,
     String? cityFilter = 'Curitiba',
   }) {
-    var list = nearbyAssociates();
-    if (cityFilter != null && cityFilter.isNotEmpty) {
+    final list = nearbyAssociates();
+    return _applySearchFilters(
+      list,
+      filters: filters,
+      cityFilter: cityFilter,
+      applyCityFilter: true,
+    );
+  }
+
+  /// Unidades no retângulo visível do mapa (catálogo já carregado em memória).
+  ///
+  /// Em [applyCityFilter] = false (exploração por pan), mantém filtros de busca
+  /// mas ignora a cidade da lista — adequado ao modo mapa.
+  List<Gym> searchInBounds({
+    required GeoBounds bounds,
+    required AssociateSearchFilters filters,
+    String? cityFilter,
+    bool applyCityFilter = false,
+  }) {
+    var list = _catalog.repository.gyms.where((g) {
+      if (g.latitude == null || g.longitude == null) return false;
+      return _isInBounds(g.latitude!, g.longitude!, bounds);
+    }).toList();
+    return _applySearchFilters(
+      list,
+      filters: filters,
+      cityFilter: cityFilter,
+      applyCityFilter: applyCityFilter,
+    );
+  }
+
+  List<Gym> _applySearchFilters(
+    List<Gym> list, {
+    required AssociateSearchFilters filters,
+    String? cityFilter,
+    required bool applyCityFilter,
+  }) {
+    if (applyCityFilter && cityFilter != null && cityFilter.isNotEmpty) {
       list = list.where((g) => _matchesCityFilter(g, cityFilter)).toList();
     }
 
@@ -99,6 +138,13 @@ class AssociatesRepository {
           gym.modalities.any((m) => m.toLowerCase().contains(q)) ||
           gym.facilities.any((f) => f.label.toLowerCase().contains(q));
     }).toList();
+  }
+
+  static bool _isInBounds(double lat, double lng, GeoBounds bounds) {
+    return lat >= bounds.south &&
+        lat <= bounds.north &&
+        lng >= bounds.west &&
+        lng <= bounds.east;
   }
 
   static bool _matchesCityFilter(Gym gym, String cityFilter) {

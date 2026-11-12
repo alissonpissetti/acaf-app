@@ -8,7 +8,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../screens/member_check_in_screen.dart';
 
-/// Barra inferior colada no rodapé físico (limão até a borda; ícones acima do home indicator).
+/// Barra inferior — superfície neutra, seleção em roxo; limão só no indicador.
 class ConnectBottomNav extends StatelessWidget {
   const ConnectBottomNav({super.key});
 
@@ -71,7 +71,7 @@ class ConnectBottomNav extends StatelessWidget {
     final navTheme = NavigationBarThemeData(
       height: _contentHeight,
       backgroundColor: Colors.transparent,
-      indicatorColor: AppColors.onLime.withValues(alpha: 0.14),
+      indicatorColor: AppColors.limeSoft,
       overlayColor: WidgetStateProperty.all(Colors.transparent),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -80,26 +80,31 @@ class ConnectBottomNav extends StatelessWidget {
           fontSize: 11,
           fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
           height: 1,
-          color: AppColors.onLime.withValues(alpha: selected ? 1 : 0.72),
+          color: selected ? AppColors.primary : AppColors.textMuted,
         );
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return IconThemeData(
           size: 22,
-          color: AppColors.onLime.withValues(alpha: selected ? 1 : 0.72),
+          color: selected ? AppColors.primary : AppColors.textMuted,
         );
       }),
     );
 
     // NavigationBar já inclui SafeArea inferior — não somar padding manual (empurrava ícones).
-    return Theme(
-      data: Theme.of(context).copyWith(navigationBarTheme: navTheme),
-      child: NavigationBar(
-        backgroundColor: AppColors.lime,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(navigationBarTheme: navTheme),
+        child: NavigationBar(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
         selectedIndex: selectedIndex,
             onDestinationSelected: (i) {
               final state = context.read<AppState>();
@@ -151,6 +156,7 @@ class ConnectBottomNav extends StatelessWidget {
                       label: 'Conta',
                     ),
                   ],
+        ),
       ),
     );
   }

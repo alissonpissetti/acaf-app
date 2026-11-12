@@ -49,7 +49,7 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
             heroBackground: GymPhotoGallery(
               gym: gym,
               network: network,
-              height: GymHeroSliverAppBar.expandedHeightWithPhoto,
+              height: GymHeroSliverAppBar.heroVisualHeight(context, hasHeroPhoto),
               logoHeight: 64,
             ),
           ),

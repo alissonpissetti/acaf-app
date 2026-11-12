@@ -5,6 +5,7 @@ import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/connect_bottom_nav.dart';
+import '../widgets/brand_logo.dart';
 import '../widgets/movly_tab_header.dart';
 import '../widgets/connect_primary_button.dart';
 
@@ -63,7 +64,18 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.pageX, 12, AppSpacing.pageX, 4),
+            child: const Align(
+              alignment: Alignment.centerLeft,
+              child: BrandLogo(height: 42, variant: BrandLogoVariant.purple),
+            ),
+          ),
+        ),
         const MovlyTabHeader(
+          topSafeArea: false,
           title: 'Começar',
           subtitle: 'Use o código que sua empresa enviou para liberar o benefício.',
         ),
@@ -84,9 +96,9 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
                 const SizedBox(height: AppSpacing.block),
                 _InfoCard(
                   icon: Icons.vpn_key_rounded,
-                  title: 'Código de adesão',
+                  title: 'Código de Acesso',
                   body:
-                      'É um código único da empresa (ex.: TAGSA). '
+                      'É um código único da empresa (ex.: CODIGODASUAEMPRESA). '
                       'Sem ele, não é possível escolher o plano corporativo.',
                 ),
                 const SizedBox(height: AppSpacing.section),
@@ -103,14 +115,14 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
                   style: AppTypography.bodyMuted,
                 ),
                 const SizedBox(height: AppSpacing.block),
-                Text('Código de adesão', style: AppTypography.label.copyWith(color: AppColors.foregroundSecondary)),
+                Text('Código de Acesso', style: AppTypography.label.copyWith(color: AppColors.foregroundSecondary)),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _codeController,
                   textCapitalization: TextCapitalization.characters,
                   autocorrect: false,
                   decoration: const InputDecoration(
-                    hintText: 'Ex.: TAGSA',
+                    hintText: 'Ex.: CODIGODASUAEMPRESA',
                     prefixIcon: Icon(Icons.tag_rounded),
                   ),
                 ),
@@ -191,7 +203,7 @@ class _StepDot extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 14,
-          backgroundColor: active ? AppColors.orange : AppColors.surfaceMuted,
+          backgroundColor: active ? AppColors.primary : AppColors.surfaceMuted,
           child: Text(
             label,
             style: AppTypography.caption.copyWith(
@@ -228,8 +240,8 @@ class _InfoCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: AppColors.orangeSoft,
-              child: Icon(icon, size: 20, color: AppColors.orange),
+              backgroundColor: AppColors.purpleSoft,
+              child: Icon(icon, size: 20, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(

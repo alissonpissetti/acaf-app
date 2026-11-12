@@ -50,7 +50,7 @@ class ConnectPageHeader extends StatelessWidget {
                 children: [
                   if (!showBrandBand)
                     SizedBox(
-                      height: 44,
+                      height: BrandLogo.totalHeight(40),
                       width: double.infinity,
                       child: Stack(
                         alignment: Alignment.centerLeft,
@@ -107,14 +107,14 @@ class _MovlyBrandBand extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                height: 44,
+                height: BrandLogo.totalHeight(38),
                 width: double.infinity,
                 child: Stack(
                   alignment: Alignment.centerLeft,
                   children: [
                     const Padding(
                       padding: EdgeInsets.only(right: 96),
-                      child: BrandLogo(height: 38, variant: BrandLogoVariant.purple),
+                      child: BrandLogo(height: 38, variant: BrandLogoVariant.gradient),
                     ),
                     const Align(
                       alignment: Alignment.centerRight,

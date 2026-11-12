@@ -12,7 +12,9 @@ import 'state/catalog_state.dart';
 import 'state/location_state.dart';
 import 'state/app_state_persistence.dart';
 import 'branding/movly_brand.dart';
-import 'theme/app_theme.dart';
+import 'theme/app_colors.dart';
+import 'theme/movly_theme.dart';
+import 'widgets/brand_logo.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,22 +52,22 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: appState),
         ChangeNotifierProvider.value(value: locationState),
       ],
-      child: AcafApp(bootstrapError: bootstrapError),
+      child: MovlyApp(bootstrapError: bootstrapError),
     ),
   );
 }
 
-class AcafApp extends StatelessWidget {
-  const AcafApp({super.key, this.bootstrapError});
+class MovlyApp extends StatelessWidget {
+  const MovlyApp({super.key, this.bootstrapError});
 
   final String? bootstrapError;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: MovlyBrand.appName,
+      title: MovlyBrand.materialAppTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
+      theme: MovlyTheme.light(),
       home: bootstrapError != null
           ? ApiBootstrapErrorScreen(message: bootstrapError!)
           : const HomeShell(),
@@ -80,6 +82,7 @@ class ApiBootstrapErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -87,20 +90,23 @@ class ApiBootstrapErrorScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              const BrandLogo(height: 40),
+              const SizedBox(height: 24),
+              Text(
                 'Não foi possível iniciar',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                style: theme.textTheme.headlineMedium,
               ),
               const SizedBox(height: 12),
-              Text(message),
+              Text(message, style: theme.textTheme.bodyLarge),
               const SizedBox(height: 8),
               Text(
                 kReleaseMode
                     ? 'Verifique sua conexão com a internet e tente novamente. '
                         'API: ${ApiConfig.productionBaseUrl}'
-                    : 'Em desenvolvimento, verifique que connect-api está rodando em '
+                    : 'Em desenvolvimento, verifique que a API está rodando em '
                         'http://127.0.0.1:8787 (Android emulador: http://10.0.2.2:8787). '
                         'Para testar produção: flutter run --dart-define=CONNECT_API_URL=${ApiConfig.productionBaseUrl}',
+                style: theme.textTheme.bodyMedium,
               ),
               const Spacer(),
               FilledButton(

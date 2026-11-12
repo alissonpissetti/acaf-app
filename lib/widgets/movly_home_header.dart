@@ -21,23 +21,34 @@ class MovlyHomeHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: BrandLogo(height: 36, variant: BrandLogoVariant.purple),
-                  ),
-                  _HeaderIconButton(
-                    icon: Icons.person_outline_rounded,
-                    tooltip: 'Minha conta',
-                    onTap: () => UserAccountScreen.open(context),
-                  ),
-                  const SizedBox(width: 8),
-                  _HeaderIconButton(
-                    icon: Icons.notifications_none_rounded,
-                    tooltip: 'Notificações',
-                    onTap: () {},
-                  ),
-                ],
+              SizedBox(
+                height: BrandLogo.totalHeight(42),
+                width: double.infinity,
+                child: Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    const BrandLogo(
+                      height: 42,
+                      variant: BrandLogoVariant.lockupOnLime,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _HeaderIconButton(
+                          icon: Icons.person_outline_rounded,
+                          tooltip: 'Minha conta',
+                          onTap: () => UserAccountScreen.open(context),
+                        ),
+                        const SizedBox(width: 8),
+                        _HeaderIconButton(
+                          icon: Icons.notifications_none_rounded,
+                          tooltip: 'Notificações',
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
               Text(

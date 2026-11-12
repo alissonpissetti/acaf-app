@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'brand_logo.dart';
 import 'gym_collapsed_app_bar_title.dart';
 
-/// App bar do detalhe da unidade/rede: título só na barra ao rolar; sobre foto, nome na base do hero.
+/// App bar do detalhe da unidade/rede: faixa roxa fixa no topo; hero (foto/degradê) abaixo;
+/// nome grande só no hero expandido, some ao colapsar.
 class GymHeroSliverAppBar extends StatelessWidget {
   const GymHeroSliverAppBar({
     super.key,
@@ -21,18 +23,35 @@ class GymHeroSliverAppBar extends StatelessWidget {
   final Widget heroBackground;
   final String? expandedSubtitle;
 
-  static const double expandedHeightWithPhoto = 200;
-  static const double expandedHeightWithoutPhoto = 140;
+  /// Altura visível do hero (foto ou degradê) abaixo da faixa roxa fixa.
+  static const double heroContentHeightWithPhoto = 220;
+  static const double heroContentHeightWithoutPhoto = 152;
 
-  double get _expandedHeight =>
-      hasHeroPhoto ? expandedHeightWithPhoto : expandedHeightWithoutPhoto;
+  /// Opacidade da faixa roxa translúcida sobre o hero (manual Movly).
+  static const double heroTopBarOpacity = 0.88;
 
-  bool _toolbarCollapsed(BuildContext context) {
-    if (!scrollController.hasClients) return false;
-    final top = MediaQuery.paddingOf(context).top;
-    final threshold = _expandedHeight - kToolbarHeight - top - 6;
-    return scrollController.offset >= threshold;
+  double _expandedHeight(BuildContext context) =>
+      _toolbarTopInset(context) +
+      heroVisualHeight(context, hasHeroPhoto);
+
+  /// Altura do bloco foto/degradê abaixo da faixa roxa.
+  static double heroVisualHeight(BuildContext context, bool hasHeroPhoto) {
+    return hasHeroPhoto
+        ? heroContentHeightWithPhoto
+        : heroContentHeightWithoutPhoto;
   }
+
+  double _toolbarTopInset(BuildContext context) =>
+      MediaQuery.paddingOf(context).top + kToolbarHeight;
+
+  double _collapseT(BuildContext context) {
+    if (!scrollController.hasClients) return 0;
+    final range = _expandedHeight(context) - _toolbarTopInset(context);
+    if (range <= 1) return 1;
+    return (scrollController.offset / range).clamp(0.0, 1.0);
+  }
+
+  bool _toolbarCollapsed(BuildContext context) => _collapseT(context) >= 0.98;
 
   @override
   Widget build(BuildContext context) {
@@ -40,49 +59,95 @@ class GymHeroSliverAppBar extends StatelessWidget {
       animation: scrollController,
       builder: (context, _) {
         final collapsed = _toolbarCollapsed(context);
-        final showToolbarTitle = !hasHeroPhoto || collapsed;
-        final onPhotoToolbar = hasHeroPhoto && !collapsed;
+        final t = _collapseT(context);
+        final toolbarTop = _toolbarTopInset(context);
+        final showToolbarTitle = collapsed;
+        final titleFade = (1.0 - t * 1.35).clamp(0.0, 1.0);
+        final heroBottomLabel = expandedSubtitle ?? title;
 
         return SliverAppBar(
-          expandedHeight: _expandedHeight,
+          expandedHeight: _expandedHeight(context),
           pinned: true,
-          backgroundColor: AppColors.surface,
-          foregroundColor: AppColors.foreground,
-          iconTheme: IconThemeData(
-            color: onPhotoToolbar ? Colors.white : AppColors.foreground,
-          ),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          iconTheme: const IconThemeData(color: Colors.white),
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           titleSpacing: 0,
           title: showToolbarTitle
-              ? GymCollapsedAppBarTitle(label: title)
-              : const SizedBox.shrink(),
-          flexibleSpace: FlexibleSpaceBar(
-            centerTitle: false,
-            expandedTitleScale: 1,
-            collapseMode: CollapseMode.parallax,
-            title: _flexibleTitle(showToolbarTitle),
-            titlePadding: showToolbarTitle && hasHeroPhoto
-                ? const EdgeInsetsDirectional.only(start: 48, bottom: 12)
-                : const EdgeInsetsDirectional.only(start: 16, end: 16, bottom: 14),
-            background: heroBackground,
+              ? GymCollapsedAppBarTitle(label: title, onHero: true)
+              : const Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: BrandLogo(height: 28, variant: BrandLogoVariant.lime),
+                ),
+          flexibleSpace: Stack(
+            fit: StackFit.expand,
+            children: [
+              FlexibleSpaceBar(
+                centerTitle: false,
+                expandedTitleScale: 1,
+                collapseMode: CollapseMode.pin,
+                title: titleFade > 0.02
+                    ? Opacity(
+                        opacity: titleFade,
+                        child: _HeroBottomTitle(text: heroBottomLabel),
+                      )
+                    : null,
+                titlePadding: const EdgeInsetsDirectional.only(
+                  start: 16,
+                  end: 16,
+                  bottom: 14,
+                ),
+                background: Column(
+                  children: [
+                    SizedBox(height: toolbarTop),
+                    Expanded(
+                      child: ClipRect(child: heroBackground),
+                    ),
+                  ],
+                ),
+              ),
+              if (!collapsed)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _GymHeroTopBar(opacity: heroTopBarOpacity),
+                ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: toolbarTop,
+                child: IgnorePointer(
+                  child: ColoredBox(
+                    color: AppColors.primary.withValues(alpha: t * 0.94),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
+}
 
-  Widget? _flexibleTitle(bool showToolbarTitle) {
-    if (hasHeroPhoto && !showToolbarTitle) {
-      return _HeroBottomTitle(text: title);
-    }
-    if (!hasHeroPhoto && expandedSubtitle != null) {
-      return Text(
-        expandedSubtitle!,
-        style: AppTypography.cardTitle.copyWith(color: AppColors.foreground),
-      );
-    }
-    return null;
+class _GymHeroTopBar extends StatelessWidget {
+  const _GymHeroTopBar({required this.opacity});
+
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+    final barHeight = top + kToolbarHeight;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: opacity),
+      ),
+      child: SizedBox(height: barHeight),
+    );
   }
 }
 
