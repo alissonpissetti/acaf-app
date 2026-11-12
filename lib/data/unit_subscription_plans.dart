@@ -44,7 +44,11 @@ List<UnitPlanSpec> defaultUnitPlanSpecs(List<String> unitModalities) {
     UnitPlanSpec(connectPlanId: 'connect-plus'),
     UnitPlanSpec(connectPlanId: 'connect-multi'),
     UnitPlanSpec(connectPlanId: 'connect-pro'),
-    UnitPlanSpec(connectPlanId: 'connect-total'),
+    UnitPlanSpec(connectPlanId: 'connect-max'),
+    UnitPlanSpec(connectPlanId: 'connect-prime'),
+    UnitPlanSpec(connectPlanId: 'connect-elite'),
+    UnitPlanSpec(connectPlanId: 'connect-signature'),
+    UnitPlanSpec(connectPlanId: 'connect-infinite'),
   ];
 }
 
@@ -159,7 +163,7 @@ List<String> _resolveModalities({
 
 /// Quando a unidade não lista modalidades no spec, amplia progressivamente por tier Connect.
 int? _modalityCapForTier(String connectPlanId, int unitCount) {
-  if (connectPlanId == 'connect-total') return null;
+  if (connectPlanId == 'connect-infinite') return null;
   final idx = connectPlanTierIndex(connectPlanId);
   if (idx < 0) return unitCount;
   return (idx + 1).clamp(1, unitCount);
