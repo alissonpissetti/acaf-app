@@ -27,8 +27,15 @@ class MyPlanScreen extends StatelessWidget {
   }
 }
 
-class _MyPlanContent extends StatelessWidget {
+class _MyPlanContent extends StatefulWidget {
   const _MyPlanContent();
+
+  @override
+  State<_MyPlanContent> createState() => _MyPlanContentState();
+}
+
+class _MyPlanContentState extends State<_MyPlanContent> {
+  bool _changingPlan = false;
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +123,18 @@ class _MyPlanContent extends StatelessWidget {
                   onPressed: () => _openCheckout(context, selectedId),
                 ),
               ],
+              if (selectedId != null &&
+                  activeConnect != null &&
+                  selectedId != activeConnect.planId) ...[
+                const SizedBox(height: 8),
+                ConnectPrimaryButton(
+                  label: _changingPlan ? 'Alterando plano…' : 'Confirmar alteração de plano',
+                  icon: Icons.swap_horiz_rounded,
+                  onPressed: _changingPlan
+                      ? null
+                      : () => _confirmPlanChange(context, activeConnect, selectedId),
+                ),
+              ],
               if (gymSub != null) ...[
                 const SizedBox(height: AppSpacing.section),
                 Text('Plano na unidade', style: AppTypography.sectionTitle),
@@ -191,6 +210,71 @@ class _MyPlanContent extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _confirmPlanChange(
+    BuildContext context,
+    ActiveConnectSubscription activeConnect,
+    String selectedId,
+  ) async {
+    final currentPlan = connectPlanById(activeConnect.planId);
+    final targetPlan = connectPlanById(selectedId);
+    if (currentPlan == null || targetPlan == null) return;
+
+    final isUpgrade = targetPlan.pricePerMonth > currentPlan.pricePerMonth;
+    final monthlyDelta = (targetPlan.pricePerMonth - currentPlan.pricePerMonth).abs();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isUpgrade ? 'Confirmar upgrade' : 'Confirmar downgrade'),
+        content: Text(
+          isUpgrade
+              ? 'Você está saindo de ${currentPlan.name} (R\$ ${currentPlan.pricePerMonth.toStringAsFixed(2)}/mês) '
+                  'para ${targetPlan.name} (R\$ ${targetPlan.pricePerMonth.toStringAsFixed(2)}/mês).\n\n'
+                  'Cobraremos agora a diferença proporcional ao restante do ciclo atual '
+                  '(até cerca de R\$ ${monthlyDelta.toStringAsFixed(2)}), no cartão já cadastrado.\n\n'
+                  'A partir do próximo ciclo, o valor mensal será R\$ ${targetPlan.pricePerMonth.toStringAsFixed(2)}.'
+              : 'Você está saindo de ${currentPlan.name} (R\$ ${currentPlan.pricePerMonth.toStringAsFixed(2)}/mês) '
+                  'para ${targetPlan.name} (R\$ ${targetPlan.pricePerMonth.toStringAsFixed(2)}/mês).\n\n'
+                  'Não haverá cobrança nem estorno agora: o valor já pago neste ciclo permanece vigente até a renovação.\n\n'
+                  'A mensalidade passará a R\$ ${targetPlan.pricePerMonth.toStringAsFixed(2)} no próximo ciclo.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Voltar')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Confirmar')),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    setState(() => _changingPlan = true);
+    final error = await context.read<AppState>().tryChangeConnectPlan(selectedId);
+    if (!context.mounted) return;
+    setState(() => _changingPlan = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isUpgrade
+              ? 'Plano atualizado. A cobrança proporcional do upgrade foi processada.'
+              : 'Plano atualizado. Sem cobrança adicional neste ciclo.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 }
 
 class _ActiveConnectPlanCard extends StatelessWidget {
@@ -256,7 +340,7 @@ class _ConnectPlanRulesBanner extends StatelessWidget {
           const SizedBox(height: 8),
           const _RuleRow(
             icon: Icons.qr_code_scanner_rounded,
-            text: '1 check-in por dia (máximo) em qualquer unidade da rede',
+            text: '1 check-in por dia (máximo) na sua academia escolhida',
           ),
           const SizedBox(height: 6),
           const _RuleRow(

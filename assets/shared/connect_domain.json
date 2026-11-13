@@ -71,7 +71,7 @@
       "name": "Infinite",
       "pricePerMonth": 799.9,
       "tierIndex": 8,
-      "description": "Topo da linha Connect — benefícios ilimitados no ecossistema."
+      "description": "Topo da linha Movly — benefícios ilimitados no ecossistema."
     }
   ],
   "modalityCatalog": [
@@ -100,6 +100,6 @@
     "maxPerPersonPerDay": 1,
     "connectScope": "network",
     "dailyPassScope": "unit",
-    "help": "Cada pessoa pode fazer apenas 1 check-in por dia (plano: em qualquer unidade da rede; diária: na unidade da compra)."
+    "help": "Cada pessoa pode fazer apenas 1 check-in por dia (plano: na sua academia escolhida; diária: na unidade da compra)."
   }
 }

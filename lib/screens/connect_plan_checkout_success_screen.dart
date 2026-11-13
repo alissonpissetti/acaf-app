@@ -6,9 +6,11 @@ import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/brand_logo.dart';
+import '../services/biometric_auth_service.dart';
+import '../widgets/biometric_enable_prompt.dart';
 import '../widgets/connect_primary_button.dart';
 
-class ConnectPlanCheckoutSuccessScreen extends StatelessWidget {
+class ConnectPlanCheckoutSuccessScreen extends StatefulWidget {
   const ConnectPlanCheckoutSuccessScreen({
     super.key,
     required this.plan,
@@ -19,6 +21,23 @@ class ConnectPlanCheckoutSuccessScreen extends StatelessWidget {
   final ConnectProductPlan plan;
   final String cardBrand;
   final String cardLastFour;
+
+  @override
+  State<ConnectPlanCheckoutSuccessScreen> createState() => _ConnectPlanCheckoutSuccessScreenState();
+}
+
+class _ConnectPlanCheckoutSuccessScreenState extends State<ConnectPlanCheckoutSuccessScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      BiometricEnablePrompt.offerIfAppropriate(
+        context,
+        biometricAuth: context.read<BiometricAuthService>(),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +55,7 @@ class ConnectPlanCheckoutSuccessScreen extends StatelessWidget {
               children: [
                 const Center(child: BrandLogo(height: 36)),
                 const SizedBox(height: AppSpacing.section),
-                _SuccessHero(planName: plan.name),
+                _SuccessHero(planName: widget.plan.name),
                 const SizedBox(height: AppSpacing.section),
                 Text('Resumo da assinatura', style: AppTypography.sectionTitle),
                 const SizedBox(height: AppSpacing.item),
@@ -51,16 +70,16 @@ class ConnectPlanCheckoutSuccessScreen extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _PlanTierBadge(plan: plan),
+                            _PlanTierBadge(plan: widget.plan),
                             const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(plan.name, style: AppTypography.cardTitle.copyWith(fontSize: 17)),
+                                  Text(widget.plan.name, style: AppTypography.cardTitle.copyWith(fontSize: 17)),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'R\$ ${plan.pricePerMonth.toStringAsFixed(2)}/mês',
+                                    'R\$ ${widget.plan.pricePerMonth.toStringAsFixed(2)}/mês',
                                     style: AppTypography.caption.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.orange,
@@ -85,7 +104,7 @@ class ConnectPlanCheckoutSuccessScreen extends StatelessWidget {
                             const SizedBox(height: 10),
                             const _SummaryRow(
                               icon: Icons.qr_code_scanner_rounded,
-                              text: '1 check-in por dia em qualquer unidade da rede',
+                              text: '1 check-in por dia na sua academia escolhida',
                             ),
                             const SizedBox(height: 10),
                             const _SummaryRow(
@@ -123,7 +142,7 @@ class ConnectPlanCheckoutSuccessScreen extends StatelessWidget {
                             children: [
                               Text('Cartão cadastrado', style: AppTypography.cardTitle.copyWith(fontSize: 15)),
                               const SizedBox(height: 2),
-                              Text('$cardBrand · final $cardLastFour', style: AppTypography.bodyMuted),
+                              Text('${widget.cardBrand} · final ${widget.cardLastFour}', style: AppTypography.bodyMuted),
                               const SizedBox(height: 4),
                               Text(
                                 'Débito recorrente autorizado',

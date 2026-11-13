@@ -37,7 +37,7 @@ class ExploreAssociatesMap extends StatefulWidget {
 }
 
 class _ExploreAssociatesMapState extends State<ExploreAssociatesMap> {
-  static const _userAgentPackage = 'com.acaf.acaf';
+  static const _userAgentPackage = 'com.movly.app';
   static const _minZoom = 5.0;
   static const _maxZoom = 18.0;
   static const _defaultZoom = 13.5;

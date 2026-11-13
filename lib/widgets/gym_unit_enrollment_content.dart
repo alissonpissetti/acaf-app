@@ -9,16 +9,25 @@ import '../navigation/open_connect_plan_tab.dart';
 import '../screens/daily_pass_screen.dart';
 import '../screens/subscription_screen.dart';
 import '../state/app_state.dart';
+import 'company_code_entry_sheet.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'connect_primary_button.dart';
+import 'gym_description_section.dart';
 import 'gym_features_section.dart';
 import 'gym_modality_booking_section.dart';
 import 'gym_open_hours_section.dart';
 
-/// Barra fixa inferior: diária + academia principal.
-Widget gymUnitStickyActions(BuildContext context, Gym gym) {
+/// Usuário fora do modo guia (cadastro corporativo ou sessão de membro).
+bool userCanPurchaseDailyPass(AppState appState) => !appState.isGuestGuideMode;
+
+/// Barra fixa inferior: diária + academia principal (somente com diária ativa e sessão válida).
+Widget? gymUnitStickyActions(BuildContext context, Gym gym) {
   final appState = context.watch<AppState>();
+  if (!userCanPurchaseDailyPass(appState) || !gym.offersPurchasableDailyPass) {
+    return null;
+  }
+
   final connectSub = appState.activeConnectSubscription;
   final primary = appState.primaryGym;
   final isPrimary = primary?.gymId == gym.id;
@@ -95,12 +104,22 @@ void _onChoosePrimaryGym(BuildContext context, Gym gym, AppState appState) async
   }
 }
 
+/// Seção «Descrição» abaixo do título do hero (oculta se vazio).
+List<Widget> gymUnitDescriptionBlocks(Gym gym) {
+  if (gym.trimmedDescription == null) return const [];
+  return [
+    GymDescriptionSection(description: gym.trimmedDescription),
+    const SizedBox(height: AppSpacing.block),
+  ];
+}
+
 /// Blocos abaixo do hero: local, modalidades, planos, etc.
 List<Widget> gymUnitEnrollmentSections(
   BuildContext context,
   Gym gym,
-  GymNetwork? network,
-) {
+  GymNetwork? network, {
+  bool showDescription = true,
+}) {
   final appState = context.watch<AppState>();
   final connectSub = appState.activeConnectSubscription;
   final connectPlan = connectPlanForSubscription(connectSub);
@@ -109,6 +128,7 @@ List<Widget> gymUnitEnrollmentSections(
   final cheapestSubscribable = subscribable.isEmpty ? null : unitPlansFromPrice(subscribable);
 
   return [
+    if (showDescription) ...gymUnitDescriptionBlocks(gym),
     Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -169,7 +189,31 @@ List<Widget> gymUnitEnrollmentSections(
       ),
     ),
     const SizedBox(height: AppSpacing.section),
-    GymModalityBookingSection(gym: gym),
+    if (!appState.isGuestGuideMode) GymModalityBookingSection(gym: gym),
+    if (appState.isGuestGuideMode) ...[
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Cadastro necessário', style: AppTypography.sectionTitle),
+              const SizedBox(height: AppSpacing.tight),
+              Text(
+                'Contratos, diárias e reservas ficam disponíveis após o cadastro com o código da empresa.',
+                style: AppTypography.bodyMuted,
+              ),
+              const SizedBox(height: AppSpacing.block),
+              ConnectPrimaryButton(
+                label: 'Cadastrar agora',
+                icon: Icons.vpn_key_rounded,
+                onPressed: () => openCompanyEnrollmentFlow(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ] else ...[
     Text('Como acessar', style: AppTypography.sectionTitle),
     const SizedBox(height: AppSpacing.item),
     if (connectSub == null)
@@ -197,7 +241,7 @@ List<Widget> gymUnitEnrollmentSections(
               },
       ),
     const SizedBox(height: 12),
-    if (gym.dailyPassActive)
+    if (userCanPurchaseDailyPass(appState) && gym.offersPurchasableDailyPass)
       GymEnrollmentOptionCard(
         icon: Icons.qr_code_2_rounded,
         title: 'Diária com check-in',
@@ -208,7 +252,8 @@ List<Widget> gymUnitEnrollmentSections(
           );
         },
       ),
-    if (gym.dailyPassActive) const SizedBox(height: AppSpacing.section),
+    if (userCanPurchaseDailyPass(appState) && gym.offersPurchasableDailyPass)
+      const SizedBox(height: AppSpacing.section),
     if (connectSub != null && appState.primaryGym?.gymId == gym.id) ...[
       Card(
         color: AppColors.orangeSoft,
@@ -363,6 +408,7 @@ List<Widget> gymUnitEnrollmentSections(
           );
         },
       ),
+    ],
     const SizedBox(height: 80),
   ];
 }

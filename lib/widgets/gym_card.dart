@@ -27,6 +27,7 @@ class GymCard extends StatelessWidget {
     this.distanceRank,
     this.cardContext = GymCardContext.networkUnitPicker,
     this.networkUnitCount,
+    this.guideReadOnly = false,
   });
 
   final Gym gym;
@@ -35,6 +36,7 @@ class GymCard extends StatelessWidget {
   final int? distanceRank;
   final GymCardContext cardContext;
   final int? networkUnitCount;
+  final bool guideReadOnly;
 
   static const _heroAspectRatio = 16 / 10;
 
@@ -141,15 +143,25 @@ class GymCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-              child: cardContext == GymCardContext.homeUnitIndex
-                  ? _HomeOpenNetworkFooter(
-                      planFrom: planFrom,
-                      dailyPrice: gym.dailyPassPrice,
-                      showDailyPass: gym.dailyPassActive,
-                      unitCount: networkUnitCount ?? 1,
-                      onOpenNetwork: onTap,
+              child: guideReadOnly
+                  ? OutlinedButton.icon(
+                      onPressed: onTap,
+                      icon: const Icon(Icons.map_outlined, size: 20),
+                      label: Text(
+                        cardContext == GymCardContext.homeUnitIndex
+                            ? 'Ver unidades no guia'
+                            : 'Ver detalhes da unidade',
+                      ),
                     )
-                  : gym.dailyPassActive
+                  : cardContext == GymCardContext.homeUnitIndex
+                      ? _HomeOpenNetworkFooter(
+                          planFrom: planFrom,
+                          dailyPrice: gym.dailyPassPrice,
+                          showDailyPass: gym.offersPurchasableDailyPass,
+                          unitCount: networkUnitCount ?? 1,
+                          onOpenNetwork: onTap,
+                        )
+                      : gym.offersPurchasableDailyPass
                       ? Row(
                           children: [
                             Expanded(

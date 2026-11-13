@@ -64,6 +64,36 @@ class ConnectBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final guest = context.select<AppState, bool>((s) => s.isGuestGuideMode);
+    if (guest) {
+      return DecoratedBox(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: _contentHeight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.explore_rounded, size: 22, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Guia de academias',
+                  style: AppTypography.label.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final homeTabIndex = context.select<AppState, int>((s) => s.homeTabIndex);
     final hasCheckIn = _hasCenterCheckIn(context);
     final selectedIndex = _selectedNavIndex(homeTabIndex, hasCheckIn);

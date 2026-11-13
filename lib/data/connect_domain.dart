@@ -3,7 +3,7 @@ import '../models/connect_product_plan.dart';
 import '../services/connect_api.dart';
 import 'modality_catalog.dart';
 
-/// Domínio Connect (planos e catálogo de modalidades) via connect-api.
+/// Domínio Movly (planos e catálogo de modalidades) via API.
 class ConnectDomain {
   ConnectDomain._({
     required this.schemaVersion,
@@ -24,7 +24,7 @@ class ConnectDomain {
     final client = api ?? ConnectApi();
     final map = await client.fetchDomain();
     if (map == null) {
-      throw StateError('Não foi possível carregar a configuração da plataforma da API.');
+      throw StateError('Domínio Movly indisponível (fetchDomain sem dados).');
     }
 
     final domain = ConnectDomain._(
@@ -58,7 +58,7 @@ class ConnectDomain {
               highlight: plan.id == highlightId,
               benefits: [
                 'Rede completa de associados',
-                'Check-in pelo app · 1 visita/dia',
+                '1 check-in por dia na sua academia escolhida',
                 if (plan.tierIndex >= 2) 'Suporte prioritário',
               ],
             ),

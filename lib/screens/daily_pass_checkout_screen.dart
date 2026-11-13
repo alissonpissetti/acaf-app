@@ -9,8 +9,10 @@ import '../models/user_account.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../utils/credit_card_brand.dart';
 import '../utils/payment_input_formatters.dart';
 import '../widgets/connect_primary_button.dart';
+import '../widgets/credit_card_number_field.dart';
 import 'purchase_success_screen.dart';
 
 class DailyPassCheckoutScreen extends StatefulWidget {
@@ -32,6 +34,7 @@ class _DailyPassCheckoutScreenState extends State<DailyPassCheckoutScreen> {
   CreditCheckoutMode _creditMode = CreditCheckoutMode.savedCard;
   String? _selectedCardId;
   bool _submitting = false;
+  CreditCardBrand _cardBrand = CreditCardBrand.unknown;
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -141,18 +144,11 @@ class _DailyPassCheckoutScreenState extends State<DailyPassCheckoutScreen> {
                           v == null || v.trim().length < 3 ? 'Informe o titular' : null,
                     ),
                     const SizedBox(height: AppSpacing.item),
-                    TextFormField(
+                    CreditCardNumberField(
                       controller: _numberController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(16),
-                        CardNumberInputFormatter(),
-                      ],
                       decoration: _fieldDecoration('Número do cartão', prefix: Icons.credit_card_rounded),
-                      validator: (v) {
-                        if (paymentDigitsOnly(v).length < 16) return 'Cartão inválido';
-                        return null;
+                      onBrandChanged: (b) {
+                        if (_cardBrand != b) setState(() => _cardBrand = b);
                       },
                     ),
                     const SizedBox(height: AppSpacing.item),
@@ -179,10 +175,14 @@ class _DailyPassCheckoutScreenState extends State<DailyPassCheckoutScreen> {
                             obscureText: true,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(4),
+                              LengthLimitingTextInputFormatter(specForBrand(_cardBrand).cvvLength),
                             ],
                             decoration: _fieldDecoration('CVV'),
-                            validator: (v) => v == null || v.length < 3 ? 'CVV' : null,
+                            validator: (v) {
+                              final need = specForBrand(_cardBrand).cvvLength;
+                              if (v == null || v.length < need) return 'CVV';
+                              return null;
+                            },
                           ),
                         ),
                       ],

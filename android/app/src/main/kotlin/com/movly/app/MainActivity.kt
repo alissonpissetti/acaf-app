@@ -1,4 +1,4 @@
-package com.acaf.acaf
+package com.movly.app
 
 import io.flutter.embedding.android.FlutterActivity
 

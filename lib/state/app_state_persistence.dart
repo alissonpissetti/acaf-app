@@ -12,7 +12,7 @@ import '../models/user_account.dart';
 import '../models/company_enrollment.dart';
 
 /// Cache local leve da sessão do associado (preferências de UI e dados ainda sem endpoint dedicado).
-/// Plano Connect, academia principal e diárias ativas são sincronizados com a API ao abrir o app.
+/// Plano Movly, academia principal e diárias ativas são sincronizados com a API ao abrir o app.
 class AppStatePersistence {
   AppStatePersistence({AssociatesRepository? repository})
       : _repository = repository;

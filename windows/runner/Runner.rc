@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.acaf" "\0"
-            VALUE "FileDescription", "acaf" "\0"
+            VALUE "CompanyName", "Movly" "\0"
+            VALUE "FileDescription", "Movly" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "acaf" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.acaf. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Movly. All rights reserved." "\0"
             VALUE "OriginalFilename", "acaf.exe" "\0"
-            VALUE "ProductName", "acaf" "\0"
+            VALUE "ProductName", "Movly" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

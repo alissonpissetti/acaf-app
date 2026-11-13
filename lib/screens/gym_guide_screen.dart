@@ -225,6 +225,7 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
     final associates = allAssociates.take(_visibleCount).toList();
     final hasMore = _visibleCount < allAssociates.length;
     final isMember = appState.activeConnectSubscription != null;
+    final guest = appState.isGuestGuideMode;
     final primaryGym = _primaryGym(appState);
 
     final listTitle = location.loading
@@ -426,6 +427,7 @@ class _HomeAssociatesScreenState extends State<HomeAssociatesScreen> {
                     distanceRank: entry.key + 1,
                     cardContext: GymCardContext.homeUnitIndex,
                     networkUnitCount: _repository!.networkUnitCount(associate.networkId),
+                    guideReadOnly: guest,
                     onTap: () => _openNetwork(associate),
                   ),
                 );

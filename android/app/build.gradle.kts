@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.acaf.acaf"
+    namespace = "com.movly.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.acaf.acaf"
+        applicationId = "com.movly.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

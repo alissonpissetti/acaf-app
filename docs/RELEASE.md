@@ -39,7 +39,7 @@ Gerar base64 do keystore:
 base64 -i upload-keystore.jks | pbcopy
 ```
 
-No Play Console: criar app `com.acaf.acaf`, vincular service account com permissão de release.
+No Play Console: criar app `com.movly.app`, vincular service account com permissão de release.
 
 ### iOS (App Store Connect)
 
@@ -47,7 +47,7 @@ No Play Console: criar app `com.acaf.acaf`, vincular service account com permiss
 |--------|-----------|
 | `IOS_DISTRIBUTION_CERTIFICATE_BASE64` | Certificado Distribution `.p12` em base64 |
 | `IOS_DISTRIBUTION_CERTIFICATE_PASSWORD` | Senha do `.p12` |
-| `IOS_PROVISIONING_PROFILE_BASE64` | Profile App Store `com.tagsa.acafconnect` em base64 |
+| `IOS_PROVISIONING_PROFILE_BASE64` | Profile App Store `com.movly.app` em base64 |
 | `KEYCHAIN_PASSWORD` | Senha aleatória para keychain temporário no CI |
 | `APP_STORE_CONNECT_KEY_ID` | Key ID da API key |
 | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |

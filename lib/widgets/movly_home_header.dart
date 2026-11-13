@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../branding/movly_brand.dart';
 import '../screens/user_account_screen.dart';
+import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'brand_logo.dart';
+import 'company_code_entry_sheet.dart';
 
 /// Topo da home — **chartreuse** como no manual movly.app (cliente final).
 class MovlyHomeHeader extends StatelessWidget {
@@ -12,6 +15,8 @@ class MovlyHomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final guest = context.watch<AppState>().isGuestGuideMode;
+
     return ColoredBox(
       color: AppColors.lime,
       child: SafeArea(
@@ -34,17 +39,25 @@ class MovlyHomeHeader extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        _HeaderIconButton(
-                          icon: Icons.person_outline_rounded,
-                          tooltip: 'Minha conta',
-                          onTap: () => UserAccountScreen.open(context),
-                        ),
-                        const SizedBox(width: 8),
-                        _HeaderIconButton(
-                          icon: Icons.notifications_none_rounded,
-                          tooltip: 'Notificações',
-                          onTap: () {},
-                        ),
+                        if (guest)
+                          _HeaderIconButton(
+                            icon: Icons.vpn_key_outlined,
+                            tooltip: 'Cadastrar',
+                            onTap: () => openCompanyEnrollmentFlow(context),
+                          )
+                        else ...[
+                          _HeaderIconButton(
+                            icon: Icons.person_outline_rounded,
+                            tooltip: 'Minha conta',
+                            onTap: () => UserAccountScreen.open(context),
+                          ),
+                          const SizedBox(width: 8),
+                          _HeaderIconButton(
+                            icon: Icons.notifications_none_rounded,
+                            tooltip: 'Notificações',
+                            onTap: () {},
+                          ),
+                        ],
                       ],
                     ),
                   ],

@@ -1,0 +1,12 @@
+#!/bin/sh
+ROOT="$(git rev-parse --show-toplevel)"
+API_ROOT="$(cd "$ROOT/../acaf-api" 2>/dev/null && pwd)"
+SCRIPT="${API_ROOT}/scripts/changelog-record-commit.mjs"
+CHANGELOG="${API_ROOT}/changelog/changelog.json"
+if [ ! -f "$SCRIPT" ] && [ -f "$ROOT/scripts/changelog-record-commit.mjs" ]; then
+  SCRIPT="$ROOT/scripts/changelog-record-commit.mjs"
+  CHANGELOG="$ROOT/changelog/changelog.json"
+fi
+if [ -f "$SCRIPT" ]; then
+  CHANGELOG_FILE="$CHANGELOG" node "$SCRIPT" 2>/dev/null || true
+fi

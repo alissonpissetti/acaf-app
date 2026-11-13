@@ -104,6 +104,7 @@ class CatalogRepository {
           : null,
       latitude: (row['latitude'] as num?)?.toDouble(),
       longitude: (row['longitude'] as num?)?.toDouble(),
+      description: _trimOrNull(row['description'] as String?),
     );
 
     return gym.copyWith(
@@ -183,4 +184,10 @@ class CatalogRepository {
   }
 
   static double _toRadians(double degrees) => degrees * math.pi / 180;
+
+  static String? _trimOrNull(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
 }

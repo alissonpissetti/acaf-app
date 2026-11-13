@@ -6,7 +6,7 @@ void setModalityCatalogOptions(List<String> options) {
   _catalogOptions = List.of(options);
 }
 
-/// Modalidades do domínio Connect + unidades já carregadas.
+/// Modalidades do domínio Movly + unidades já carregadas.
 List<String> allModalityOptions() {
   final options = <String>{..._catalogOptions};
   final sorted = options.where((o) => o != '24h').toList()

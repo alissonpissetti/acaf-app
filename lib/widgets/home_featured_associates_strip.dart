@@ -116,14 +116,16 @@ class _FeaturedAssociateTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.cardTitle.copyWith(fontSize: 13, height: 1.2),
               ),
-              const SizedBox(height: 2),
-              Text(
-                'Diária R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
-                style: AppTypography.caption.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.foreground,
+              if (gym.offersPurchasableDailyPass) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Diária R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
+                  style: AppTypography.caption.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.foreground,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

@@ -7,7 +7,10 @@ import '../models/connect_product_plan.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../utils/credit_card_brand.dart';
+import '../utils/payment_input_formatters.dart';
 import '../widgets/connect_primary_button.dart';
+import '../widgets/credit_card_number_field.dart';
 import 'connect_plan_checkout_success_screen.dart';
 
 class ConnectPlanCheckoutScreen extends StatefulWidget {
@@ -25,9 +28,12 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
   final _numberController = TextEditingController();
   final _expiryController = TextEditingController();
   final _cvvController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _cpfController = TextEditingController();
 
   bool _authorizeRecurring = false;
   bool _submitting = false;
+  CreditCardBrand _cardBrand = CreditCardBrand.unknown;
 
   ConnectProductPlan get _plan {
     return connectPlanById(widget.planId) ?? connectProductPlans.first;
@@ -39,6 +45,8 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
     _numberController.dispose();
     _expiryController.dispose();
     _cvvController.dispose();
+    _phoneController.dispose();
+    _cpfController.dispose();
     super.dispose();
   }
 
@@ -80,19 +88,11 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
               },
             ),
             const SizedBox(height: AppSpacing.item),
-            TextFormField(
+            CreditCardNumberField(
               controller: _numberController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(16),
-                _CardNumberFormatter(),
-              ],
               decoration: _fieldDecoration('Número do cartão', prefix: Icons.credit_card_rounded),
-              validator: (v) {
-                final digits = _digitsOnly(v);
-                if (digits.length < 16) return 'Informe os 16 dígitos do cartão';
-                return null;
+              onBrandChanged: (b) {
+                if (_cardBrand != b) setState(() => _cardBrand = b);
               },
             ),
             const SizedBox(height: AppSpacing.item),
@@ -109,7 +109,7 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
                     ],
                     decoration: _fieldDecoration('Validade (MM/AA)'),
                     validator: (v) {
-                      final d = _digitsOnly(v);
+                      final d = paymentDigitsOnly(v);
                       if (d.length != 4) return 'MM/AA';
                       final month = int.tryParse(d.substring(0, 2));
                       if (month == null || month < 1 || month > 12) return 'Mês inválido';
@@ -125,16 +125,44 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
                     obscureText: true,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
+                      LengthLimitingTextInputFormatter(specForBrand(_cardBrand).cvvLength),
                     ],
                     decoration: _fieldDecoration('CVV'),
                     validator: (v) {
-                      if (v == null || v.length < 3) return 'CVV inválido';
+                      final need = specForBrand(_cardBrand).cvvLength;
+                      if (v == null || v.length < need) return 'CVV inválido';
                       return null;
                     },
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: AppSpacing.section),
+            Text('Dados do titular', style: AppTypography.sectionTitle),
+            const SizedBox(height: AppSpacing.item),
+            TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              inputFormatters: const [BrazilianMobileInputFormatter()],
+              decoration: _fieldDecoration('Celular (DDD + número)', prefix: Icons.smartphone_rounded),
+              validator: (v) {
+                if (!isValidBrazilianMobile(v)) {
+                  return 'Informe um celular válido com DDD';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: AppSpacing.item),
+            TextFormField(
+              controller: _cpfController,
+              keyboardType: TextInputType.number,
+              inputFormatters: const [CpfInputFormatter()],
+              decoration: _fieldDecoration('CPF do titular'),
+              validator: (v) {
+                final digits = paymentDigitsOnly(v);
+                if (digits.length != 11) return 'Informe o CPF com 11 dígitos';
+                return null;
+              },
             ),
             const SizedBox(height: AppSpacing.block),
             Container(
@@ -220,23 +248,35 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _submitting = true);
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!context.mounted) return;
 
-    final digits = _digitsOnly(_numberController.text);
-    final brand = _inferCardBrand(digits);
-    final lastFour = digits.substring(digits.length - 4);
+    final digits = paymentDigitsOnly(_numberController.text);
+    final brand = inferCardBrand(digits);
 
-    await context.read<AppState>().activateConnectPlan(
+    final error = await context.read<AppState>().activateConnectPlan(
           planId: _plan.id,
-          cardBrand: brand,
-          cardLastFour: lastFour,
-          holderName: _nameController.text.trim(),
+          cardNumber: digits,
+          cardHolderName: _nameController.text.trim(),
           expiryLabel: _expiryController.text.trim(),
+          cvv: _cvvController.text.trim(),
+          holderCpf: paymentDigitsOnly(_cpfController.text),
+          holderPhone: paymentDigitsOnly(_phoneController.text),
         );
 
     if (!context.mounted) return;
     setState(() => _submitting = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+        ),
+      );
+      return;
+    }
+
+    final lastFour = digits.length >= 4 ? digits.substring(digits.length - 4) : digits;
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
@@ -245,14 +285,6 @@ class _ConnectPlanCheckoutScreenState extends State<ConnectPlanCheckoutScreen> {
     );
   }
 
-  static String _digitsOnly(String? value) => value?.replaceAll(RegExp(r'\D'), '') ?? '';
-
-  static String _inferCardBrand(String digits) {
-    if (digits.startsWith('4')) return 'Visa';
-    if (digits.startsWith('5')) return 'Mastercard';
-    if (digits.startsWith('3')) return 'Amex';
-    return 'Cartão';
-  }
 }
 
 class _PlanSummaryCard extends StatelessWidget {
@@ -276,7 +308,7 @@ class _PlanSummaryCard extends StatelessWidget {
               style: AppTypography.caption.copyWith(fontWeight: FontWeight.w700, color: AppColors.orange),
             ),
             const SizedBox(height: 8),
-            Text('1 check-in por dia · Rede de academias', style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
+            Text('1 check-in por dia na sua academia escolhida', style: AppTypography.bodyMuted.copyWith(fontSize: 13)),
             const SizedBox(height: 4),
             Text(
               'Modalidades conforme configuração de cada unidade visitada.',
@@ -289,23 +321,6 @@ class _PlanSummaryCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _CardNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final buf = StringBuffer();
-    for (var i = 0; i < digits.length; i++) {
-      if (i > 0 && i % 4 == 0) buf.write(' ');
-      buf.write(digits[i]);
-    }
-    final text = buf.toString();
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }

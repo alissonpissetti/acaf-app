@@ -73,10 +73,14 @@ class _GymNetworkScreenState extends State<GymNetworkScreen> {
     final units = _units!;
     final gym = _selected!;
     final hasHeroPhoto = GymHeroVisual.hasCoverPhoto(gym);
-    final minDaily = units.map((u) => u.dailyPassPrice).reduce((a, b) => a < b ? a : b);
+    final dailyUnits = units.where((u) => u.offersPurchasableDailyPass).toList();
+    final double? minDaily = dailyUnits.isEmpty
+        ? null
+        : dailyUnits.map((u) => u.dailyPassPrice).reduce((a, b) => a < b ? a : b);
     final minPlan = units
         .expand((u) => u.plans.map((p) => p.pricePerMonth))
         .reduce((a, b) => a < b ? a : b);
+    final networkOffersDaily = minDaily != null;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -107,11 +111,14 @@ class _GymNetworkScreenState extends State<GymNetworkScreen> {
                   minDaily: minDaily,
                   minPlan: minPlan,
                 ),
+                ...gymUnitDescriptionBlocks(gym),
                 const SizedBox(height: AppSpacing.section),
                 Text('Escolha a unidade', style: AppTypography.sectionTitle),
                 const SizedBox(height: 4),
                 Text(
-                  'Diária ou plano na unidade desejada · ordem por distância',
+                  networkOffersDaily
+                      ? 'Diária ou plano na unidade desejada · ordem por distância'
+                      : 'Planos na unidade desejada · ordem por distância',
                   style: AppTypography.bodyMuted,
                 ),
                 const SizedBox(height: AppSpacing.item),
@@ -121,7 +128,12 @@ class _GymNetworkScreenState extends State<GymNetworkScreen> {
                   onSelected: _selectUnit,
                 ),
                 const SizedBox(height: AppSpacing.block),
-                ...gymUnitEnrollmentSections(context, gym, widget.network),
+                ...gymUnitEnrollmentSections(
+                  context,
+                  gym,
+                  widget.network,
+                  showDescription: false,
+                ),
               ]),
             ),
           ),
@@ -141,7 +153,7 @@ class _NetworkSummaryStrip extends StatelessWidget {
 
   final GymNetwork network;
   final int unitCount;
-  final double minDaily;
+  final double? minDaily;
   final double minPlan;
 
   @override
@@ -178,7 +190,9 @@ class _NetworkSummaryStrip extends StatelessWidget {
                 ],
                 const SizedBox(height: 6),
                 Text(
-                  '$unitCount unidade${unitCount == 1 ? '' : 's'} · a partir de R\$ ${minDaily.toStringAsFixed(2)} diária · R\$ ${minPlan.toStringAsFixed(0)}/mês',
+                  minDaily != null
+                      ? '$unitCount unidade${unitCount == 1 ? '' : 's'} · a partir de R\$ ${minDaily!.toStringAsFixed(2)} diária · R\$ ${minPlan.toStringAsFixed(0)}/mês'
+                      : '$unitCount unidade${unitCount == 1 ? '' : 's'} · planos a partir de R\$ ${minPlan.toStringAsFixed(0)}/mês',
                   style: AppTypography.caption.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,

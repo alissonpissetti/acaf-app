@@ -10,19 +10,34 @@ import '../models/daily_pass_offer.dart';
 import '../models/gym.dart';
 import '../services/check_in_location.dart';
 import '../services/connect_api.dart';
+import '../utils/payment_input_formatters.dart';
 import '../models/primary_gym.dart';
 import '../models/user_account.dart';
+import '../services/biometric_session_store.dart';
+import '../services/pending_company_code_store.dart';
 import 'app_state_persistence.dart';
 
 class AppState extends ChangeNotifier {
   AppState({
     AppStatePersistence? persistence,
     AssociatesRepository? associatesRepository,
+    BiometricSessionStore? biometricSessionStore,
+    PendingCompanyCodeStore? pendingCompanyCodeStore,
   })  : _persistence = persistence ?? AppStatePersistence(),
-        _associates = associatesRepository;
+        _associates = associatesRepository,
+        _biometricSessionStore = biometricSessionStore ?? BiometricSessionStore(),
+        _injectedPendingCompanyCodeStore = pendingCompanyCodeStore;
 
   final AppStatePersistence _persistence;
   final AssociatesRepository? _associates;
+  final BiometricSessionStore _biometricSessionStore;
+  final PendingCompanyCodeStore? _injectedPendingCompanyCodeStore;
+  PendingCompanyCodeStore? _lazyPendingCompanyCodeStore;
+
+  /// Sempre não-nulo; lazy init evita crash em hot reload após adicionar o store.
+  PendingCompanyCodeStore get _pendingCompanyCodeStore =>
+      _injectedPendingCompanyCodeStore ??
+      (_lazyPendingCompanyCodeStore ??= PendingCompanyCodeStore());
 
   final List<WalletItem> _wallet = [];
   final List<SavedPaymentCard> _savedCards = [];
@@ -35,7 +50,11 @@ class AppState extends ChangeNotifier {
   PrimaryGymChoice? _primaryGym;
   CompanyEnrollment? _companyEnrollment;
 
+  String? _pendingCompanyCode;
+  bool _companyCodeEntryPromptDone = false;
+
   bool _persistReady = false;
+  bool _guestPrefsLoaded = false;
 
   List<WalletItem> get wallet => List.unmodifiable(_wallet);
 
@@ -61,7 +80,27 @@ class AppState extends ChangeNotifier {
 
   CompanyEnrollment? get companyEnrollment => _companyEnrollment;
 
-  /// Plano Connect com cartão cadastrado, assinatura em unidade ou equivalente.
+  String? get pendingCompanyCode => _pendingCompanyCode;
+
+  /// Sem cadastro corporativo concluído e sem sessão de membro (carteira/plano local).
+  bool get isGuestGuideMode => !isEmployeeIdentified && !hasEstablishedSession;
+
+  /// Modal na abertura quando não há sessão e o usuário ainda não concluiu o fluxo inicial.
+  bool get shouldShowCompanyCodeEntry {
+    if (!_guestPrefsLoaded) return false;
+    if (hasEstablishedSession || isEmployeeIdentified) return false;
+    return !_companyCodeEntryPromptDone;
+  }
+
+  /// Sessão local com vínculo, plano, carteira ou cartões (base para desbloqueio biométrico).
+  bool get hasEstablishedSession =>
+      _companyEnrollment != null ||
+      _activeConnectSubscription != null ||
+      _activeGymSubscription != null ||
+      _wallet.isNotEmpty ||
+      _savedCards.isNotEmpty;
+
+  /// Plano Movly com cartão cadastrado, assinatura em unidade ou equivalente.
   bool get hasActiveMembership =>
       _activeConnectSubscription != null ||
       _activeGymSubscription != null;
@@ -100,8 +139,32 @@ class AppState extends ChangeNotifier {
     if (snapshot != null) {
       _applySnapshot(snapshot);
     }
+    await loadGuestEntryPreferences();
     _persistReady = true;
     await _syncSessionFromApi();
+    notifyListeners();
+  }
+
+  Future<void> loadGuestEntryPreferences() async {
+    _pendingCompanyCode = await _pendingCompanyCodeStore.loadPendingCode();
+    _companyCodeEntryPromptDone = await _pendingCompanyCodeStore.isEntryPromptCompleted();
+    _guestPrefsLoaded = true;
+  }
+
+  Future<void> savePendingCompanyCode(String code) async {
+    final trimmed = code.trim();
+    if (trimmed.isEmpty) return;
+    _pendingCompanyCode = trimmed;
+    await _pendingCompanyCodeStore.savePendingCode(trimmed);
+    notifyListeners();
+  }
+
+  Future<void> completeCompanyCodeEntry(CompanyCodeEntryChoice? choice) async {
+    await _pendingCompanyCodeStore.markEntryPromptCompleted();
+    _companyCodeEntryPromptDone = true;
+    if (choice == CompanyCodeEntryChoice.exploreOnly) {
+      homeTabIndex = 0;
+    }
     notifyListeners();
   }
 
@@ -117,6 +180,11 @@ class AppState extends ChangeNotifier {
     _primaryGym = null;
     _companyEnrollment = null;
     await _persistence.clear();
+    await _biometricSessionStore.clearBoundSession();
+    await _pendingCompanyCodeStore.clearPendingCode();
+    await _pendingCompanyCodeStore.clearEntryPromptCompleted();
+    _pendingCompanyCode = null;
+    _companyCodeEntryPromptDone = false;
     notifyListeners();
   }
 
@@ -170,6 +238,8 @@ class AppState extends ChangeNotifier {
       code: result.code ?? code.trim(),
       collaboratorLabel: collaboratorName?.trim().isEmpty ?? true ? null : collaboratorName!.trim(),
     );
+    await _pendingCompanyCodeStore.clearPendingCode();
+    _pendingCompanyCode = null;
     _emit();
     return null;
   }
@@ -184,6 +254,11 @@ class AppState extends ChangeNotifier {
   }
 
   void openPlanTab() {
+    if (isGuestGuideMode) {
+      homeTabIndex = 0;
+      _emit();
+      return;
+    }
     homeTabIndex = 1;
     _emit();
   }
@@ -201,45 +276,169 @@ class AppState extends ChangeNotifier {
     _emit();
   }
 
-  /// Confirma assinatura Connect após checkout e registra na API.
-  Future<void> activateConnectPlan({
-    required String planId,
-    required String cardBrand,
-    required String cardLastFour,
-    String? holderName,
-    String? expiryLabel,
-  }) async {
+  /// Troca de plano com cobrança (upgrade) ou apenas confirmação (downgrade). Retorna erro ou `null`.
+  Future<String?> tryChangeConnectPlan(String planId) async {
     final plan = connectPlanById(planId);
-    if (plan == null) return;
+    if (plan == null) return 'Plano não encontrado.';
 
-    final now = DateTime.now();
-    final holder = holderName?.trim().isNotEmpty == true ? holderName!.trim() : 'Titular';
+    final current = _activeConnectSubscription;
+    if (current == null) {
+      return 'Você ainda não tem um plano ativo. Escolha um plano e confirme o pagamento para começar.';
+    }
+
+    final profileBefore = await _fetchActiveConnectMemberProfile();
+    if (profileBefore == null || !profileBefore.active) {
+      if (_activeConnectSubscription != null) {
+        _activeConnectSubscription = null;
+        _emit();
+      }
+      return 'Não encontramos um plano ativo nesta conta. '
+          'Escolha e confirme um plano abaixo ou fale com o RH se o benefício ainda não foi liberado.';
+    }
+
+    final holder = profileBefore.holderName.trim().isNotEmpty
+        ? profileBefore.holderName.trim()
+        : _holderNameForConnectApi(profileBefore);
+
+    final api = await ConnectApi().changeConnectSubscriptionPlan(
+      holderName: holder,
+      connectPlanId: planId,
+    );
+    if (!api.ok) {
+      return api.errorMessage ?? 'Não foi possível alterar o plano.';
+    }
+
+    final outcome = api.paymentOutcome?.trim().toLowerCase();
+    if (outcome == 'pending_payment') {
+      await _syncSessionFromApi();
+      _emit();
+      return 'Pagamento do upgrade ainda em processamento no cartão. '
+          'O plano só será alterado após a confirmação — acompanhe em faturamento ou tente novamente em instantes.';
+    }
+    if (outcome == 'failed') {
+      return 'Cobrança do upgrade não foi autorizada. Verifique o cartão cadastrado.';
+    }
+
+    final profile = api.profile;
+    if (profile == null || !profile.active) {
+      return 'Não foi possível confirmar a troca de plano.';
+    }
+    if (profile.connectPlanId != planId) {
+      return 'A troca de plano ainda não foi confirmada no gateway de pagamento.';
+    }
+
+    final previous = _activeConnectSubscription;
     _selectedConnectPlanId = planId;
     _activeConnectSubscription = ActiveConnectSubscription(
       planId: plan.id,
       planName: plan.name,
       pricePerMonth: plan.pricePerMonth,
-      since: now,
-      cardBrand: cardBrand,
-      cardLastFour: cardLastFour,
+      since: DateTime.tryParse(profile.since) ?? previous?.since ?? DateTime.now(),
+      cardBrand: previous?.cardBrand ?? 'Cartão',
+      cardLastFour: profile.cardLastFour ?? previous?.cardLastFour ?? '0000',
+    );
+
+    if (api.kind == 'upgrade' && (api.upgradeChargeNow ?? 0) > 0) {
+      _appendBilling(
+        description: 'Upgrade Movly — ${plan.name}',
+        amount: api.upgradeChargeNow!,
+        kind: BillingEntryKind.connectSubscription,
+        cardLastFour: profile.cardLastFour ?? previous?.cardLastFour,
+      );
+    }
+
+    await _syncSessionFromApi();
+    _emit();
+    return null;
+  }
+
+  /// Cobrança no Asaas e confirma assinatura. Retorna mensagem de erro ou `null` se ok.
+  Future<String?> activateConnectPlan({
+    required String planId,
+    required String cardNumber,
+    required String cardHolderName,
+    required String expiryLabel,
+    required String cvv,
+    String? holderCpf,
+    String? holderPhone,
+  }) async {
+    final plan = connectPlanById(planId);
+    if (plan == null) return 'Plano não encontrado.';
+
+    final digits = cardNumber.replaceAll(RegExp(r'\D'), '');
+    final brand = inferCardBrand(digits);
+    final lastFour = digits.length >= 4 ? digits.substring(digits.length - 4) : digits;
+
+    final expiryDigits = expiryLabel.replaceAll(RegExp(r'\D'), '');
+    if (expiryDigits.length != 4) {
+      return 'Validade do cartão inválida.';
+    }
+    final expiryMonth = expiryDigits.substring(0, 2);
+    final expiryYear = expiryDigits.substring(2);
+
+    final api = await ConnectApi().checkoutConnectSubscription(
+      holderName: _connectSubscriptionHolderName(fallbackCardHolder: cardHolderName),
+      connectPlanId: planId,
+      cardHolderName: cardHolderName,
+      cardNumber: digits,
+      expiryMonth: expiryMonth,
+      expiryYear: expiryYear,
+      cvv: cvv,
+      companyName: _companyEnrollment?.companyName,
+      holderCpf: holderCpf,
+      holderPhone: holderPhone,
+    );
+
+    if (!api.ok) {
+      return api.errorMessage ?? 'Não foi possível cadastrar o cartão.';
+    }
+
+    final subscriptionId = api.asaasSubscriptionId?.trim();
+    if (subscriptionId == null || subscriptionId.isEmpty) {
+      return 'Cobrança não confirmada no gateway. Tente novamente.';
+    }
+
+    final profile = api.profile;
+    if (profile == null || !profile.active) {
+      return 'Não foi possível confirmar a assinatura.';
+    }
+
+    final confirmedLastFour = profile.cardLastFour ?? api.cardLastFour ?? lastFour;
+    final since = DateTime.tryParse(profile.since) ?? DateTime.now();
+    final holder = cardHolderName.trim().isNotEmpty ? cardHolderName.trim() : 'Titular';
+
+    _selectedConnectPlanId = planId;
+    _activeConnectSubscription = ActiveConnectSubscription(
+      planId: plan.id,
+      planName: plan.name,
+      pricePerMonth: plan.pricePerMonth,
+      since: since,
+      cardBrand: brand,
+      cardLastFour: confirmedLastFour,
     );
 
     registerPaymentCard(
-      brand: cardBrand,
-      lastFour: cardLastFour,
+      brand: brand,
+      lastFour: confirmedLastFour,
       holderName: holder,
-      expiryLabel: expiryLabel ?? '—',
+      expiryLabel: expiryLabel,
       makeDefault: true,
       persist: false,
     );
 
-    await ConnectApi().registerConnectSubscription(
-      holderName: _defaultHolderName(),
-      connectPlanId: planId,
-      companyName: _companyEnrollment?.companyName,
-    );
     await _syncSessionFromApi();
+    final firstPaymentId = api.firstPaymentId?.trim();
+    if (firstPaymentId != null && firstPaymentId.isNotEmpty) {
+      _upsertConnectBillingRow(
+        paymentId: firstPaymentId,
+        description: 'Movly — ${plan.name}',
+        amount: plan.pricePerMonth,
+        status: api.firstPaymentStatus,
+        cardLastFour: confirmedLastFour,
+      );
+    }
     _emit();
+    return null;
   }
 
   void registerPaymentCard({
@@ -422,8 +621,12 @@ class AppState extends ChangeNotifier {
     final block = primaryGymChangeBlockReason(gymId: gymId);
     if (block != null) return block;
 
+    final connectProfile = await _fetchActiveConnectMemberProfile();
+    final holder = connectProfile != null
+        ? _holderNameForConnectApi(connectProfile)
+        : _connectSubscriptionHolderName();
     final result = await ConnectApi().setConnectPrimaryGym(
-      holderName: _defaultHolderName(),
+      holderName: holder,
       unitId: gymId,
     );
     if (!result.ok) {
@@ -461,10 +664,10 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _syncSessionFromApi() async {
-    final holder = _sessionHolderName();
+    final profile = await _fetchActiveConnectMemberProfile();
+    final holder = _holderNameForConnectApi(profile);
     if (holder.trim().isEmpty) return;
 
-    final profile = await ConnectApi().fetchConnectMember(holder);
     if (profile != null && profile.active) {
       final plan = connectPlanById(profile.connectPlanId);
       final previous = _activeConnectSubscription;
@@ -474,55 +677,50 @@ class AppState extends ChangeNotifier {
         pricePerMonth: plan?.pricePerMonth ?? previous?.pricePerMonth ?? 0,
         since: DateTime.tryParse(profile.since) ?? previous?.since ?? DateTime.now(),
         cardBrand: previous?.cardBrand ?? 'Cartão',
-        cardLastFour: previous?.cardLastFour ?? '0000',
+        cardLastFour: profile.cardLastFour ?? previous?.cardLastFour ?? '0000',
       );
       _selectedConnectPlanId = profile.connectPlanId;
       _applyConnectMemberProfile(profile);
-      _rebuildConnectBillingEntries();
-    } else if (_activeConnectSubscription != null) {
-      _rebuildConnectBillingEntries();
     }
 
+    await _syncConnectBillingFromApi(profile: profile);
     await _syncWalletFromApi(holder);
   }
 
-  /// Mensalidades do plano Connect (valor do colaborador), últimos 3 meses.
-  void _rebuildConnectBillingEntries() {
+  /// Atualiza apenas o extrato da assinatura (Asaas) — útil ao abrir Minha conta.
+  Future<void> refreshConnectBillingStatement() async {
+    await _syncConnectBillingFromApi();
+    _emit();
+  }
+
+  /// Extrato da assinatura a partir do Asaas (remove lançamentos locais fictícios).
+  Future<void> _syncConnectBillingFromApi({ConnectMemberProfile? profile}) async {
+    profile ??= await _fetchActiveConnectMemberProfile();
+    if (profile == null || !profile.active) return;
+
+    final subscriptionId = profile.asaasSubscriptionId?.trim();
+    if (subscriptionId == null || subscriptionId.isEmpty) return;
+
+    final holder = _holderNameForConnectApi(profile);
+    if (holder.trim().isEmpty) return;
+
+    final rows = await ConnectApi().fetchConnectBillingStatement(holder);
+    _billingEntries.removeWhere((e) => e.kind == BillingEntryKind.connectSubscription);
+
     final sub = _activeConnectSubscription;
-    if (sub == null) return;
+    final fallbackLastFour = profile.cardLastFour ?? sub?.cardLastFour;
 
-    _billingEntries.removeWhere(
-      (e) =>
-          e.kind == BillingEntryKind.connectSubscription ||
-          (e.kind == BillingEntryKind.gymSubscription && e.description.contains(sub.planName)),
-    );
-
-    final since = sub.since;
-    final billingDay = since.day;
-    final billingTime = DateTime(since.year, since.month, since.day, since.hour, since.minute);
-    final now = DateTime.now();
-
-    for (var monthsBack = 0; monthsBack < 3; monthsBack++) {
-      final anchor = DateTime(now.year, now.month - monthsBack, 1);
-      final day = billingDay.clamp(1, _daysInMonth(anchor.year, anchor.month));
-      final occurredAt = DateTime(
-        anchor.year,
-        anchor.month,
-        day,
-        billingTime.hour,
-        billingTime.minute,
-      );
-      if (occurredAt.isBefore(billingTime)) continue;
-
+    for (final row in rows) {
+      if (row.id.isEmpty) continue;
       _billingEntries.add(
         BillingEntry(
-          id: 'bill-connect-${anchor.year}-${anchor.month.toString().padLeft(2, '0')}',
-          occurredAt: occurredAt,
-          description: 'Mensalidade ${sub.planName}',
-          amount: sub.pricePerMonth,
+          id: 'bill-asaas-${row.id}',
+          occurredAt: DateTime.tryParse(row.occurredAt) ?? DateTime.now(),
+          description: row.description,
+          amount: row.amount,
           kind: BillingEntryKind.connectSubscription,
-          status: BillingEntryStatus.paid,
-          cardLastFour: sub.cardLastFour,
+          status: _billingStatusFromApiRow(row.status),
+          cardLastFour: row.cardLastFour ?? fallbackLastFour,
         ),
       );
     }
@@ -530,7 +728,80 @@ class AppState extends ChangeNotifier {
     _billingEntries.sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
   }
 
-  int _daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
+  Future<ConnectMemberProfile?> _fetchActiveConnectMemberProfile() async {
+    for (final holder in _connectMemberHolderCandidates()) {
+      final profile = await ConnectApi().fetchConnectMember(holder);
+      if (profile != null && profile.active) {
+        return profile;
+      }
+    }
+    return null;
+  }
+
+  List<String> _connectMemberHolderCandidates() {
+    final seen = <String>{};
+    final out = <String>[];
+
+    void add(String? raw) {
+      final trimmed = raw?.trim() ?? '';
+      if (trimmed.isEmpty || trimmed == 'Associado') return;
+      final key = trimmed.toLowerCase();
+      if (seen.add(key)) out.add(trimmed);
+    }
+
+    add(_sessionHolderName());
+    add(_defaultHolderName());
+    if (_activeConnectSubscription != null) {
+      for (final card in _savedCards) {
+        add(card.holderName);
+      }
+    }
+    return out;
+  }
+
+  String _holderNameForConnectApi(ConnectMemberProfile? profile) {
+    final fromProfile = profile?.holderName.trim();
+    if (fromProfile != null && fromProfile.isNotEmpty) {
+      return fromProfile;
+    }
+    final candidates = _connectMemberHolderCandidates();
+    if (candidates.isNotEmpty) return candidates.first;
+    return _sessionHolderName();
+  }
+
+  void _upsertConnectBillingRow({
+    required String paymentId,
+    required String description,
+    required double amount,
+    required String? status,
+    required String? cardLastFour,
+  }) {
+    final id = 'bill-asaas-$paymentId';
+    _billingEntries.removeWhere((e) => e.id == id);
+    _billingEntries.insert(
+      0,
+      BillingEntry(
+        id: id,
+        occurredAt: DateTime.now(),
+        description: description,
+        amount: amount,
+        kind: BillingEntryKind.connectSubscription,
+        status: _billingStatusFromApiRow(status ?? 'pending'),
+        cardLastFour: cardLastFour,
+      ),
+    );
+  }
+
+  BillingEntryStatus _billingStatusFromApiRow(String status) {
+    switch (ConnectBillingStatementRow.normalizedStatus(status)) {
+      case 'paid':
+        return BillingEntryStatus.paid;
+      case 'failed':
+        return BillingEntryStatus.failed;
+      default:
+        return BillingEntryStatus.pending;
+    }
+  }
 
   Future<void> _syncWalletFromApi(String holderName) async {
     final associates = _associates;
@@ -597,6 +868,24 @@ class AppState extends ChangeNotifier {
       return enrollment.collaboratorLabel!.trim();
     }
     return _defaultHolderName();
+  }
+
+  /// Titular usado em cobrança/assinatura (prioriza nome do colaborador corporativo).
+  String _connectSubscriptionHolderName({String? fallbackCardHolder}) {
+    final enrollment = _companyEnrollment;
+    final collaborator = enrollment?.collaboratorLabel?.trim();
+    if (collaborator != null && collaborator.isNotEmpty) {
+      return collaborator;
+    }
+    final card = fallbackCardHolder?.trim();
+    if (card != null && card.isNotEmpty) {
+      return card;
+    }
+    final fromSession = _sessionHolderName();
+    if (fromSession != 'Associado') {
+      return fromSession;
+    }
+    return _dailyPassHolderName();
   }
 
   String _defaultHolderName() {

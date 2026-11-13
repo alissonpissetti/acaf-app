@@ -11,6 +11,25 @@ class ConnectApi {
 
   final String _baseUrl;
 
+  /// Mensagens da API em linguagem para o associado (evita jargão interno).
+  static String userFacingMessage(String? raw) {
+    if (raw == null) return 'Não foi possível completar a operação.';
+    final message = raw.trim();
+    if (message.isEmpty) return 'Não foi possível completar a operação.';
+
+    const legacyNoActivePlan =
+        'Não há assinatura Connect ativa para este titular.';
+    const currentNoActivePlan =
+        'Não encontramos um plano app ativo para este cadastro. Assine um plano ou confira se o benefício da empresa já foi liberado.';
+
+    if (message == legacyNoActivePlan || message == currentNoActivePlan) {
+      return 'Não encontramos um plano ativo nesta conta. '
+          'Assine um plano em Minha conta ou combine com o RH se o benefício da empresa ainda não foi liberado.';
+    }
+
+    return message;
+  }
+
   Uri? _uri(String apiPath) {
     if (apiPath.startsWith('/api/')) {
       return Uri.parse('$_baseUrl$apiPath');
@@ -333,6 +352,58 @@ class ConnectApi {
     }
   }
 
+  Future<Map<String, dynamic>?> _postJson(String apiPath, Map<String, dynamic> body) async {
+    final uri = _uri(apiPath);
+    if (uri == null) return null;
+    final client = HttpClient();
+    try {
+      final req = await client.postUrl(uri);
+      req.headers.contentType = ContentType.json;
+      req.write(jsonEncode(body));
+      final res = await req.close();
+      final text = await res.transform(utf8.decoder).join();
+      if (res.statusCode != HttpStatus.ok && res.statusCode != HttpStatus.created) {
+        try {
+          final parsed = jsonDecode(text) as Map<String, dynamic>;
+          return {'ok': false, 'message': _messageFromBody(parsed)};
+        } catch (_) {
+          return {'ok': false, 'message': 'Não foi possível completar a operação.'};
+        }
+      }
+      return jsonDecode(text) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  Future<Map<String, dynamic>?> _patchJson(String apiPath, Map<String, dynamic> body) async {
+    final uri = _uri(apiPath);
+    if (uri == null) return null;
+    final client = HttpClient();
+    try {
+      final req = await client.patchUrl(uri);
+      req.headers.contentType = ContentType.json;
+      req.write(jsonEncode(body));
+      final res = await req.close();
+      final text = await res.transform(utf8.decoder).join();
+      if (res.statusCode != HttpStatus.ok) {
+        try {
+          final parsed = jsonDecode(text) as Map<String, dynamic>;
+          return {'ok': false, 'message': _messageFromBody(parsed)};
+        } catch (_) {
+          return {'ok': false, 'message': 'Não foi possível completar a operação.'};
+        }
+      }
+      return jsonDecode(text) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
   Future<Map<String, dynamic>?> _putJson(String apiPath, Map<String, dynamic> body) async {
     final uri = _uri(apiPath);
     if (uri == null) return null;
@@ -361,10 +432,26 @@ class ConnectApi {
 
   String _messageFromBody(Map<String, dynamic> parsed) {
     final raw = parsed['message'];
-    if (raw is String && raw.trim().isNotEmpty) return raw;
-    if (raw is List && raw.isNotEmpty) return raw.map((e) => e.toString()).join(', ');
-    final nested = parsed['message'];
-    if (nested is Map && nested['message'] is String) return nested['message'] as String;
+    if (raw is String && raw.trim().isNotEmpty) return userFacingMessage(raw);
+    if (raw is List && raw.isNotEmpty) {
+      return userFacingMessage(
+        raw
+          .map((e) {
+            if (e is String && e.trim().isNotEmpty) return e.trim();
+            if (e is Map && e['message'] is String) return (e['message'] as String).trim();
+            return e.toString();
+          })
+          .where((s) => s.isNotEmpty)
+          .join(' '),
+      );
+    }
+    if (raw is Map && raw['message'] is String) {
+      return userFacingMessage(raw['message'] as String);
+    }
+    final nested = parsed['error'];
+    if (nested is String && nested.trim().isNotEmpty) {
+      return userFacingMessage(nested);
+    }
     return 'Não foi possível completar a operação.';
   }
 
@@ -381,6 +468,20 @@ class ConnectApi {
         .toList();
   }
 
+  Future<List<ConnectBillingStatementRow>> fetchConnectBillingStatement(String holderName) async {
+    final trimmed = holderName.trim();
+    if (trimmed.isEmpty) return const [];
+    final map = await _getJson(
+      '/connect/billing-statement?holderName=${Uri.encodeQueryComponent(trimmed)}',
+    );
+    if (map == null) return const [];
+    final rows = map['entries'] as List<dynamic>? ?? const [];
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map(ConnectBillingStatementRow.fromJson)
+        .toList();
+  }
+
   Future<ConnectMemberProfile?> fetchConnectMember(String holderName) async {
     final trimmed = holderName.trim();
     if (trimmed.isEmpty) return null;
@@ -391,6 +492,118 @@ class ConnectApi {
     final profile = map['profile'];
     if (profile is! Map<String, dynamic>) return null;
     return ConnectMemberProfile.fromJson(profile);
+  }
+
+  Future<ConnectMemberApiResult> checkoutConnectSubscription({
+    required String holderName,
+    required String connectPlanId,
+    required String cardHolderName,
+    required String cardNumber,
+    required String expiryMonth,
+    required String expiryYear,
+    required String cvv,
+    String? companyName,
+    String? holderCpf,
+    String? holderPhone,
+  }) async {
+    final map = await _postJson('/connect/subscription/checkout', {
+      'holderName': holderName.trim(),
+      'connectPlanId': connectPlanId,
+      if (companyName != null && companyName.trim().isNotEmpty) 'companyName': companyName.trim(),
+      if (holderCpf != null && holderCpf.trim().isNotEmpty) 'holderCpf': holderCpf.trim(),
+      if (holderPhone != null && holderPhone.trim().isNotEmpty) 'holderPhone': holderPhone.trim(),
+      'card': {
+        'holderName': cardHolderName.trim(),
+        'number': cardNumber,
+        'expiryMonth': expiryMonth,
+        'expiryYear': expiryYear,
+        'cvv': cvv,
+      },
+    });
+    if (map == null) {
+      return const ConnectMemberApiResult(ok: false, errorMessage: 'API indisponível.');
+    }
+    if (map['ok'] != true) {
+      return ConnectMemberApiResult(ok: false, errorMessage: _messageFromBody(map));
+    }
+    final profile = map['profile'];
+    if (profile is! Map<String, dynamic>) {
+      return const ConnectMemberApiResult(ok: false, errorMessage: 'Resposta inválida da API.');
+    }
+    final gateway = map['gateway'];
+    String? cardLastFour;
+    String? subscriptionId;
+    String? firstPaymentStatus;
+    String? firstPaymentId;
+    if (gateway is Map<String, dynamic>) {
+      cardLastFour = gateway['cardLastFour'] as String?;
+      subscriptionId = gateway['subscriptionId'] as String?;
+      firstPaymentStatus = gateway['firstPaymentStatus'] as String?;
+      firstPaymentId = gateway['firstPaymentId'] as String?;
+    }
+    final parsedProfile = ConnectMemberProfile.fromJson(profile);
+    return ConnectMemberApiResult(
+      ok: true,
+      profile: parsedProfile,
+      cardLastFour: cardLastFour ?? parsedProfile.cardLastFour,
+      asaasSubscriptionId: subscriptionId ?? parsedProfile.asaasSubscriptionId,
+      firstPaymentStatus: firstPaymentStatus,
+      firstPaymentId: firstPaymentId,
+    );
+  }
+
+  Future<ConnectPlanChangeApiResult> changeConnectSubscriptionPlan({
+    required String holderName,
+    required String connectPlanId,
+  }) async {
+    final map = await _patchJson('/connect/subscription/change-plan', {
+      'holderName': holderName.trim(),
+      'connectPlanId': connectPlanId,
+    });
+    if (map == null) {
+      return const ConnectPlanChangeApiResult(ok: false, errorMessage: 'API indisponível.');
+    }
+    if (map['ok'] != true) {
+      return ConnectPlanChangeApiResult(ok: false, errorMessage: _messageFromBody(map));
+    }
+    final profileRaw = map['profile'];
+    ConnectMemberProfile? profile;
+    if (profileRaw is Map<String, dynamic>) {
+      profile = ConnectMemberProfile.fromJson(profileRaw);
+    }
+    final changeRaw = map['change'];
+    String? kind;
+    double? upgradeChargeNow;
+    double? downgradeReceivable;
+    if (changeRaw is Map<String, dynamic>) {
+      kind = changeRaw['kind'] as String?;
+      upgradeChargeNow = (changeRaw['upgradeChargeNow'] as num?)?.toDouble();
+      downgradeReceivable = (changeRaw['downgradeReceivable'] as num?)?.toDouble();
+    }
+    String? paymentOutcome;
+    String? upgradePaymentId;
+    String? upgradePaymentStatus;
+    final paymentRaw = map['payment'];
+    if (paymentRaw is Map<String, dynamic>) {
+      paymentOutcome = paymentRaw['outcome'] as String?;
+      upgradePaymentId = paymentRaw['id'] as String?;
+      upgradePaymentStatus = paymentRaw['gatewayStatus'] as String?;
+    }
+    final gatewayRaw = map['gateway'];
+    if (gatewayRaw is Map<String, dynamic>) {
+      upgradePaymentId ??= gatewayRaw['upgradePaymentId'] as String?;
+      upgradePaymentStatus ??= gatewayRaw['upgradePaymentStatus'] as String?;
+    }
+    return ConnectPlanChangeApiResult(
+      ok: true,
+      profile: profile,
+      kind: kind,
+      upgradeChargeNow: upgradeChargeNow,
+      downgradeReceivable: downgradeReceivable,
+      paymentOutcome: paymentOutcome,
+      upgradePaymentId: upgradePaymentId,
+      upgradePaymentStatus: upgradePaymentStatus,
+    );
   }
 
   Future<ConnectMemberApiResult> registerConnectSubscription({
@@ -529,6 +742,46 @@ class EnrollmentValidationResult {
   final String? errorMessage;
 }
 
+class ConnectBillingStatementRow {
+  const ConnectBillingStatementRow({
+    required this.id,
+    required this.occurredAt,
+    required this.description,
+    required this.amount,
+    required this.status,
+    this.cardLastFour,
+  });
+
+  final String id;
+  final String occurredAt;
+  final String description;
+  final double amount;
+  final String status;
+  final String? cardLastFour;
+
+  factory ConnectBillingStatementRow.fromJson(Map<String, dynamic> json) {
+    return ConnectBillingStatementRow(
+      id: json['id'] as String? ?? '',
+      occurredAt: json['occurredAt'] as String? ?? '',
+      description: json['description'] as String? ?? 'Mensalidade',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      status: (json['status'] as String? ?? 'pending').toLowerCase(),
+      cardLastFour: json['cardLastFour'] as String?,
+    );
+  }
+
+  static String normalizedStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return 'paid';
+      case 'failed':
+        return 'failed';
+      default:
+        return 'pending';
+    }
+  }
+}
+
 class ConnectMemberProfile {
   const ConnectMemberProfile({
     required this.holderName,
@@ -543,6 +796,8 @@ class ConnectMemberProfile {
     this.canChangePrimary = true,
     this.remainingCheckInsBeforeChange = 0,
     this.minCheckInsToChange = 12,
+    this.asaasSubscriptionId,
+    this.cardLastFour,
   });
 
   final String holderName;
@@ -557,6 +812,8 @@ class ConnectMemberProfile {
   final bool canChangePrimary;
   final int remainingCheckInsBeforeChange;
   final int minCheckInsToChange;
+  final String? asaasSubscriptionId;
+  final String? cardLastFour;
 
   factory ConnectMemberProfile.fromJson(Map<String, dynamic> json) {
     return ConnectMemberProfile(
@@ -572,8 +829,34 @@ class ConnectMemberProfile {
       canChangePrimary: json['canChangePrimary'] as bool? ?? true,
       remainingCheckInsBeforeChange: (json['remainingCheckInsBeforeChange'] as num?)?.toInt() ?? 0,
       minCheckInsToChange: (json['minCheckInsToChange'] as num?)?.toInt() ?? 12,
+      asaasSubscriptionId: json['asaasSubscriptionId'] as String?,
+      cardLastFour: json['cardLastFour'] as String?,
     );
   }
+}
+
+class ConnectPlanChangeApiResult {
+  const ConnectPlanChangeApiResult({
+    required this.ok,
+    this.profile,
+    this.errorMessage,
+    this.kind,
+    this.upgradeChargeNow,
+    this.downgradeReceivable,
+    this.paymentOutcome,
+    this.upgradePaymentId,
+    this.upgradePaymentStatus,
+  });
+
+  final bool ok;
+  final ConnectMemberProfile? profile;
+  final String? errorMessage;
+  final String? kind;
+  final double? upgradeChargeNow;
+  final double? downgradeReceivable;
+  final String? paymentOutcome;
+  final String? upgradePaymentId;
+  final String? upgradePaymentStatus;
 }
 
 class ConnectMemberApiResult {
@@ -581,11 +864,19 @@ class ConnectMemberApiResult {
     required this.ok,
     this.profile,
     this.errorMessage,
+    this.cardLastFour,
+    this.asaasSubscriptionId,
+    this.firstPaymentStatus,
+    this.firstPaymentId,
   });
 
   final bool ok;
   final ConnectMemberProfile? profile;
   final String? errorMessage;
+  final String? cardLastFour;
+  final String? asaasSubscriptionId;
+  final String? firstPaymentStatus;
+  final String? firstPaymentId;
 }
 
 class ActiveDailyPassCode {

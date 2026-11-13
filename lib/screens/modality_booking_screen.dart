@@ -364,6 +364,9 @@ class _AccessGatePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+    final showDailyCta = !appState.isGuestGuideMode && gym.offersPurchasableDailyPass;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -384,16 +387,18 @@ class _AccessGatePanel extends StatelessWidget {
             access.reason ?? 'É necessário diária válida hoje ou plano nesta unidade.',
             style: AppTypography.bodyMuted,
           ),
-          const SizedBox(height: 14),
-          ConnectPrimaryButton(
-            label: 'Comprar diária · R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
-            icon: Icons.qr_code_2_rounded,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => DailyPassScreen(gym: gym)),
-              );
-            },
-          ),
+          if (showDailyCta) ...[
+            const SizedBox(height: 14),
+            ConnectPrimaryButton(
+              label: 'Comprar diária · R\$ ${gym.dailyPassPrice.toStringAsFixed(2)}',
+              icon: Icons.qr_code_2_rounded,
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => DailyPassScreen(gym: gym)),
+                );
+              },
+            ),
+          ],
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: () => openConnectPlanTab(context),

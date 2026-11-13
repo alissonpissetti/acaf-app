@@ -21,7 +21,7 @@ class ConnectProductPlan {
   String get tierShortName => name.replaceFirst(RegExp(r'^Connect\s+'), '').trim();
 }
 
-/// Assinatura mensal Connect ativa (cartão cadastrado).
+/// Assinatura mensal Movly ativa (cartão cadastrado).
 class ActiveConnectSubscription {
   ActiveConnectSubscription({
     required this.planId,

@@ -74,6 +74,7 @@ class Gym {
     this.galleryImageUrls = const [],
     this.latitude,
     this.longitude,
+    this.description,
   });
 
   final String id;
@@ -112,8 +113,16 @@ class Gym {
   final List<String> galleryImageUrls;
   final double? latitude;
   final double? longitude;
+  /// Texto cadastrado no portal parceiro (`GymUnit.description`).
+  final String? description;
 
   bool get hasRating => rating > 0;
+
+  String? get trimmedDescription {
+    final text = description?.trim();
+    if (text == null || text.isEmpty) return null;
+    return text;
+  }
 
   /// URLs e assets para carrossel (prioriza API).
   List<String> get photoSources {
@@ -148,6 +157,9 @@ class Gym {
     return list.join(', ');
   }
 
+  /// Diária ativa no catálogo com preço publicado (> 0).
+  bool get offersPurchasableDailyPass => dailyPassActive && dailyPassPrice > 0;
+
   /// Rótulo da unidade no card (bairro ou nome curto).
   String get unitLabel => name.contains('·') ? name.split('·').last.trim() : neighborhood;
 
@@ -155,6 +167,7 @@ class Gym {
     List<SubscriptionPlan>? plans,
     List<String>? dailyPassModalities,
     double? distanceKm,
+    String? description,
   }) {
     return Gym(
       id: id,
@@ -185,6 +198,7 @@ class Gym {
       galleryImageUrls: galleryImageUrls,
       latitude: latitude,
       longitude: longitude,
+      description: description ?? this.description,
     );
   }
 }

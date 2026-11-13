@@ -12,19 +12,23 @@ class HomeShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final guest = context.select<AppState, bool>((s) => s.isGuestGuideMode);
     final index = context.select<AppState, int>((s) => s.homeTabIndex);
+    final tabIndex = guest ? 0 : index;
 
     return Scaffold(
       backgroundColor: AppColors.surfaceMuted,
       extendBody: false,
       resizeToAvoidBottomInset: true,
-      body: IndexedStack(
-        index: index,
-        children: [
-          HomeAssociatesScreen(),
-          MyPlanScreen(),
-        ],
-      ),
+      body: guest
+          ? const HomeAssociatesScreen()
+          : IndexedStack(
+              index: tabIndex,
+              children: [
+                HomeAssociatesScreen(),
+                MyPlanScreen(),
+              ],
+            ),
       bottomNavigationBar: const ConnectBottomNav(),
     );
   }

@@ -56,6 +56,6 @@ final tokens = context.movlyTokens;
 
 ## Próxima fase (UI)
 
-Migrar telas que ainda usam aliases `AppColors.orange*` (legado Connect) para `primary` / `lime`.  
+Migrar telas que ainda usam aliases `AppColors.orange*` (legado de cores) para `primary` / `lime`.  
 Revisar ícones launcher e splash nativos após assets definitivos.  
 **Gap de asset:** lockup SVG/PNG unificado com **by ACAF Brasil** (hoje PNGs do manual ainda dizem “by ACAF” sem “Brasil”); wordmark roxo SVG não inclui tagline — compensar com texto até novo artefato.

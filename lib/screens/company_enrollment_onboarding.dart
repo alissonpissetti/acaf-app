@@ -7,11 +7,14 @@ import '../theme/app_typography.dart';
 import '../widgets/connect_bottom_nav.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/movly_tab_header.dart';
+import '../navigation/open_connect_plan_tab.dart';
 import '../widgets/connect_primary_button.dart';
 
 /// Onboarding: colaborador informa o código de adesão da empresa.
 class CompanyEnrollmentOnboarding extends StatefulWidget {
-  const CompanyEnrollmentOnboarding({super.key});
+  const CompanyEnrollmentOnboarding({super.key, this.initialCode});
+
+  final String? initialCode;
 
   @override
   State<CompanyEnrollmentOnboarding> createState() => _CompanyEnrollmentOnboardingState();
@@ -23,6 +26,16 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
   String? _error;
   bool _loading = false;
   int _step = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialCode?.trim();
+    if (initial != null && initial.isNotEmpty) {
+      _codeController.text = initial;
+      _step = 1;
+    }
+  }
 
   @override
   void dispose() {
@@ -51,7 +64,9 @@ class _CompanyEnrollmentOnboardingState extends State<CompanyEnrollmentOnboardin
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    openConnectPlanTab(context);
+    messenger?.showSnackBar(
       const SnackBar(
         content: Text('Código validado. Agora escolha seu plano.'),
         behavior: SnackBarBehavior.floating,

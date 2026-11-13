@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +11,7 @@ import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/account_empty_panel.dart';
+import '../widgets/biometric_settings_tile.dart';
 import '../widgets/billing_statement_section.dart';
 import '../widgets/connect_bottom_nav.dart';
 import '../widgets/movly_tab_header.dart';
@@ -18,13 +21,31 @@ import 'connect_plan_checkout_screen.dart';
 import 'daily_pass_qr_screen.dart';
 import 'my_reservations_screen.dart';
 
-class UserAccountScreen extends StatelessWidget {
+class UserAccountScreen extends StatefulWidget {
   const UserAccountScreen({super.key});
 
   static void open(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const UserAccountScreen()),
     );
+  }
+
+  @override
+  State<UserAccountScreen> createState() => _UserAccountScreenState();
+}
+
+class _UserAccountScreenState extends State<UserAccountScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.read<AppState>().refreshConnectBillingStatement());
+    });
+  }
+
+  Future<void> _refreshAccountData() async {
+    await context.read<AppState>().refreshConnectProfile();
   }
 
   @override
@@ -42,10 +63,18 @@ class UserAccountScreen extends StatelessWidget {
           Expanded(
             child: Consumer<AppState>(
               builder: (context, appState, _) {
-                return ListView(
-                  padding: ConnectBottomNav.listPadding(context, top: 8),
-                  children: [
+                return RefreshIndicator(
+                  color: AppColors.orange,
+                  onRefresh: _refreshAccountData,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: ConnectBottomNav.listPadding(context, top: 8),
+                    children: [
                     _ProfileSummary(enrollment: appState.companyEnrollment),
+                    const SizedBox(height: AppSpacing.section),
+                    _SectionTitle('Segurança'),
+                    const SizedBox(height: AppSpacing.item),
+                    const BiometricSettingsTile(),
                     const SizedBox(height: AppSpacing.section),
                     _SectionTitle('Plano aderido'),
                     const SizedBox(height: AppSpacing.item),
@@ -88,6 +117,7 @@ class UserAccountScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.section),
                   ],
+                  ),
                 );
               },
             ),
